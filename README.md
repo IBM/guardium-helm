@@ -319,64 +319,36 @@ Before deploying the scanner, test the assessment manually:
 
 You can install the VA Scanner Helm chart using one of three methods:
 
-### Method 1: Clone Repository (Recommended)
+### Method 1: Direct from GitHub Release (Recommended)
+
+```bash
+# Install directly from GitHub release URL
+helm install va-scanner \
+  https://github.com/IBM/guardium-helm/releases/download/v1.0.0/va-scanner-1.0.0.tgz \
+  -f my-values.yaml \
+  -n va-scanner \
+  --create-namespace
+```
+
+### Method 2: Download and Install
+
+```bash
+# Download the packaged chart
+curl -LO https://github.com/IBM/guardium-helm/releases/download/v1.0.0/va-scanner-1.0.0.tgz
+
+# Install from local file
+helm install va-scanner ./va-scanner-1.0.0.tgz -f my-values.yaml -n va-scanner --create-namespace
+```
+
+### Method 3: Clone Repository
 
 ```bash
 # Clone the repository
-git clone https://github.ibm.com/Guardium/va-scanner-helm.git
-cd va-scanner-helm
+git clone https://github.com/IBM/guardium-helm.git
+cd guardium-helm
 
 # Install using local chart from src directory
 helm install va-scanner ./src/va-scanner -f my-values.yaml -n va-scanner --create-namespace
-```
-
-### Method 2: Install from Packaged Tar File
-
-**Option A: Use pre-packaged chart from repository**
-```bash
-# Clone the repository (authentication required for IBM GitHub Enterprise)
-git clone https://github.ibm.com/Guardium/va-scanner-helm.git
-cd va-scanner-helm
-
-# The packaged chart is in the releases directory
-# Install directly from the .tgz file
-helm install va-scanner ./releases/va-scanner-1.0.0.tgz -f my-values.yaml -n va-scanner --create-namespace
-```
-
-**Option B: Package it yourself (for custom versions)**
-```bash
-# Clone the repository
-git clone https://github.ibm.com/Guardium/va-scanner-helm.git
-cd va-scanner-helm
-
-# Make any custom changes to the chart in src/va-scanner if needed
-# Then package the chart
-helm package ./src/va-scanner -d ./releases
-
-# This creates: releases/va-scanner-1.0.0.tgz (version from Chart.yaml)
-
-# Install from the packaged file
-helm install va-scanner ./releases/va-scanner-1.0.0.tgz -f my-values.yaml -n va-scanner --create-namespace
-```
-
-
-### Method 3: Download from GitHub Release
-
-```bash
-# Download the repository archive from a specific release
-curl -L https://github.ibm.com/Guardium/va-scanner-helm/archive/refs/tags/v1.0.0.tar.gz -o va-scanner-helm.tar.gz
-
-# Extract the archive
-tar -xzf va-scanner-helm.tar.gz
-
-# Navigate to the extracted directory
-cd va-scanner-helm-v1.0.0
-
-# Install from the chart directory in src
-helm install va-scanner ./src/va-scanner -f my-values.yaml -n va-scanner --create-namespace
-
-# Or use the packaged .tgz file from releases directory
-helm install va-scanner ./releases/va-scanner-1.0.0.tgz -f my-values.yaml -n va-scanner --create-namespace
 ```
 
 **Benefits:**
@@ -390,14 +362,14 @@ helm install va-scanner ./releases/va-scanner-1.0.0.tgz -f my-values.yaml -n va-
 
 | Method | Best For | Pros | Cons |
 |--------|----------|------|------|
-| **Method 1: Clone** | Development, customization | Simple, full control, latest code | Requires Git |
-| **Method 2: Packaged .tgz** | Production, distribution | Single file, air-gapped support | Need to get file first |
-| **Method 3: GitHub Release** | Specific versions | Version pinning, no Git needed | Requires authentication |
+| **Method 1: Direct URL** | Production, quick install | No download needed, always latest | Requires internet |
+| **Method 2: Download** | Air-gapped, offline | Single file, portable | Manual download |
+| **Method 3: Clone** | Development, customization | Full source, can modify | Requires Git |
 
 **Recommendation:**
-- **Development:** Use Method 1 (clone)
-- **Production:** Use Method 2 (packaged .tgz) or Method 3 (GitHub release)
-- **Air-gapped:** Use Method 2 (distribute the .tgz file)
+- **Production:** Use Method 1 (direct URL)
+- **Air-gapped:** Use Method 2 (download .tgz)
+- **Development:** Use Method 3 (clone repository)
 
 ---
 
