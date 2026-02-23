@@ -1,0 +1,11 @@
+apiVersion: v2
+name: va-scanner
+description: A Helm chart for deploying Guardium VA Scanner on Kubernetes
+type: application
+version: 1.0.0
+appVersion: "1.0.0"
+keywords:
+  - guardium
+  - va-scanner
+  - vulnerability-assessment
+  - security

@@ -1,0 +1,184 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "va-scanner.fullname" . }}
+  namespace: {{ include "va-scanner.namespace" . }}
+  labels:
+    {{- include "va-scanner.labels" . | nindent 4 }}
+spec:
+  {{- if not .Values.autoscaling.enabled }}
+  replicas: {{ .Values.replicaCount }}
+  {{- end }}
+  revisionHistoryLimit: {{ .Values.revisionHistoryLimit }}
+  progressDeadlineSeconds: {{ .Values.progressDeadlineSeconds }}
+  selector:
+    matchLabels:
+      {{- include "va-scanner.selectorLabels" . | nindent 6 }}
+  strategy:
+    {{- toYaml .Values.strategy | nindent 4 }}
+  template:
+    metadata:
+      {{- with .Values.podAnnotations }}
+      annotations:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      labels:
+        {{- include "va-scanner.selectorLabels" . | nindent 8 }}
+        {{- with .Values.podLabels }}
+        {{- toYaml . | nindent 8 }}
+        {{- end }}
+    spec:
+      {{- with .Values.imagePullSecrets }}
+      imagePullSecrets:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      serviceAccountName: {{ include "va-scanner.serviceAccountName" . }}
+      securityContext:
+        {{- toYaml .Values.podSecurityContext | nindent 8 }}
+      {{- with .Values.hostAliases }}
+      hostAliases:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      containers:
+      - name: scanner
+        image: "{{ .Values.image.repository }}:{{ .Values.image.tag | default .Chart.AppVersion }}"
+        imagePullPolicy: {{ .Values.image.pullPolicy }}
+        # {{- if .Values.vaScannerPollInMins }}
+        # command: ["/bin/bash", "-c"]
+        # args:
+        #   - |
+        #     while true; do /etc/setup.sh; PID=$?; echo $PID; done
+        # {{- end }}
+        env:
+        - name: GDP_HOST
+          valueFrom:
+            secretKeyRef:
+              name: va-scanner-credentials
+              key: GDP_HOST_IP
+        - name: GDP_HOST_IP
+          valueFrom:
+            secretKeyRef:
+              name: va-scanner-credentials
+              key: GDP_HOST_IP
+        - name: GDP_HOST_PORT
+          valueFrom:
+            secretKeyRef:
+              name: va-scanner-credentials
+              key: GDP_HOST_PORT
+        - name: GDP_AGENT_PORT
+          valueFrom:
+            secretKeyRef:
+              name: va-scanner-credentials
+              key: GDP_AGENT_PORT
+              optional: true
+        - name: CLIENT_API_KEY
+          valueFrom:
+            secretKeyRef:
+              name: va-scanner-credentials
+              key: CLIENT_API_KEY
+        - name: VA_AGENT_NAME
+          valueFrom:
+            secretKeyRef:
+              name: va-scanner-credentials
+              key: VA_AGENT_NAME
+        {{- if .Values.gdp.username }}
+        - name: USERNAME
+          valueFrom:
+            secretKeyRef:
+              name: va-scanner-credentials
+              key: USERNAME
+              optional: true
+        {{- end }}
+        {{- if .Values.gdp.clientId }}
+        - name: CLIENT_ID
+          valueFrom:
+            secretKeyRef:
+              name: va-scanner-credentials
+              key: CLIENT_ID
+              optional: true
+        {{- end }}
+        {{- if .Values.gdp.clientPassword }}
+        - name: CLIENT_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              name: va-scanner-credentials
+              key: CLIENT_PASSWORD
+              optional: true
+        {{- end }}
+        {{- if .Values.gdp.clientSecret }}
+        - name: CLIENT_SECRET
+          valueFrom:
+            secretKeyRef:
+              name: va-scanner-credentials
+              key: CLIENT_SECRET
+              optional: true
+        {{- end }}
+        {{- if .Values.gdp.httpProxyIp }}
+        - name: HTTP_PROXY_IP
+          valueFrom:
+            secretKeyRef:
+              name: va-scanner-credentials
+              key: HTTP_PROXY_IP
+              optional: true
+        {{- end }}
+        {{- if .Values.gdp.httpProxyPort }}
+        - name: HTTP_PROXY_PORT
+          valueFrom:
+            secretKeyRef:
+              name: va-scanner-credentials
+              key: HTTP_PROXY_PORT
+              optional: true
+        {{- end }}
+        {{- if .Values.gdp.cloudResourceName }}
+        - name: CLOUD_RESOURCE_NAME
+          valueFrom:
+            secretKeyRef:
+              name: va-scanner-credentials
+              key: CLOUD_RESOURCE_NAME
+              optional: true
+        {{- end }}
+        {{- if .Values.vaScannerPollInMins }}
+        - name: VA_SCANNER_POLL_IN_MINS
+          value: {{ .Values.vaScannerPollInMins | quote }}
+        {{- end }}
+        volumeMounts:
+        - name: {{ .Values.volumes.cert.name }}
+          mountPath: {{ .Values.volumes.cert.mountPath }}
+          readOnly: {{ .Values.volumes.cert.readOnly }}
+        resources:
+          {{- toYaml .Values.resources | nindent 10 }}
+        {{- if .Values.livenessProbe.enabled }}
+        livenessProbe:
+          {{- toYaml (omit .Values.livenessProbe "enabled") | nindent 10 }}
+        {{- end }}
+        {{- if .Values.readinessProbe.enabled }}
+        readinessProbe:
+          {{- toYaml (omit .Values.readinessProbe "enabled") | nindent 10 }}
+        {{- end }}
+        terminationMessagePath: /dev/termination-log
+        terminationMessagePolicy: File
+      volumes:
+      - name: {{ .Values.volumes.cert.name }}
+        secret:
+          secretName: va-cert
+          defaultMode: {{ .Values.volumes.cert.defaultMode }}
+          optional: false
+          items:
+          - key: ca.crt
+            path: vascanner.pem
+      {{- with .Values.nodeSelector }}
+      nodeSelector:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.affinity }}
+      affinity:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.tolerations }}
+      tolerations:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      dnsPolicy: {{ .Values.dnsPolicy }}
+      restartPolicy: {{ .Values.restartPolicy }}
+      schedulerName: {{ .Values.schedulerName }}
+      terminationGracePeriodSeconds: {{ .Values.terminationGracePeriodSeconds }}

@@ -1,0 +1,83 @@
+Thank you for installing {{ .Chart.Name }}!
+
+Your release is named {{ .Release.Name }}.
+
+To learn more about the release, try:
+
+  $ helm status {{ .Release.Name }} -n {{ include "va-scanner.namespace" . }}
+  $ helm get all {{ .Release.Name }} -n {{ include "va-scanner.namespace" . }}
+
+═══════════════════════════════════════════════════════════════════════════════
+
+DEPLOYMENT STATUS:
+
+1. Check the deployment status:
+   kubectl get deployment {{ include "va-scanner.fullname" . }} -n {{ include "va-scanner.namespace" . }}
+
+2. Watch the pods come up:
+   kubectl get pods -n {{ include "va-scanner.namespace" . }} -l app=va-scanner -w
+
+3. Check pod logs:
+   kubectl logs -n {{ include "va-scanner.namespace" . }} -l app=va-scanner --tail=50 -f
+
+4. Describe a pod for troubleshooting:
+   kubectl describe pod -n {{ include "va-scanner.namespace" . }} -l app=va-scanner
+
+═══════════════════════════════════════════════════════════════════════════════
+
+CONFIGURATION:
+
+- Namespace: {{ include "va-scanner.namespace" . }}
+- Replicas: {{ .Values.replicaCount }}
+{{- if .Values.autoscaling.enabled }}
+- Autoscaling: Enabled (min: {{ .Values.autoscaling.minReplicas }}, max: {{ .Values.autoscaling.maxReplicas }})
+{{- else }}
+- Autoscaling: Disabled
+{{- end }}
+- GDP Host: {{ .Values.gdp.host }}
+- VA Agent Name: {{ .Values.gdp.agentName }}
+- Image: {{ .Values.image.repository }}:{{ .Values.image.tag | default .Chart.AppVersion }}
+
+═══════════════════════════════════════════════════════════════════════════════
+
+NEXT STEPS:
+
+1. Verify scanner connectivity to GDP:
+   - Check logs for "VA Scanner App connecting to Guardium server"
+   - Look for "VA Scanner App status: Success"
+
+2. Create an assessment in GDP web interface:
+   - Login to GDP at https://{{ .Values.gdp.host }}:8443
+   - Navigate to Vulnerability Assessment
+   - Create a new assessment and select your scanner: {{ .Values.gdp.agentName }}
+
+3. Monitor the deployment:
+   kubectl get pods -n {{ include "va-scanner.namespace" . }} -w
+
+4. Check HPA status (if enabled):
+{{- if .Values.autoscaling.enabled }}
+   kubectl get hpa -n {{ include "va-scanner.namespace" . }}
+{{- else }}
+   HPA is disabled. Enable it in values.yaml with autoscaling.enabled=true
+{{- end }}
+
+═══════════════════════════════════════════════════════════════════════════════
+
+TROUBLESHOOTING:
+
+If pods are not starting:
+- Check image pull secrets: kubectl get secret {{ index .Values.imagePullSecrets 0 "name" }} -n {{ include "va-scanner.namespace" . }}
+- Verify Artifactory credentials are correct
+- Check events: kubectl get events -n {{ include "va-scanner.namespace" . }} --sort-by='.lastTimestamp'
+
+If scanner cannot connect to GDP:
+- Verify GDP_HOST is correct and reachable
+- Check certificate is valid: kubectl get secret va-cert -n {{ include "va-scanner.namespace" . }} -o yaml
+- Verify API key is correct
+- Check network connectivity and firewall rules
+
+For more information:
+- Chart documentation: https://github.com/your-org/va-scanner/tree/main/helm-chart
+- GDP documentation: Contact your GDP administrator
+
+═══════════════════════════════════════════════════════════════════════════════

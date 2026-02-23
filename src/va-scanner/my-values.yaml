@@ -1,0 +1,171 @@
+# Default values for va-scanner Helm chart
+# This is a YAML-formatted file.
+# Declare variables to be passed into your templates.
+# Namespace configuration
+namespace:
+  create: false
+  name: va-scanner10
+  labels:
+    environment: production
+# Deployment configuration
+replicaCount: 3
+# VA Scanner polling configuration
+# Set this to keep the scanner running and polling for jobs internally
+# instead of relying on Kubernetes pod restarts (which causes CrashLoopBackOff)
+# Value is in minutes. Recommended: 2-15 minutes
+# Leave empty or set to 0 to disable (pod will exit after each scan)
+vaScannerPollInMins: 2
+image:
+  repository: cp.icr.io/cp/ibm-guardium-data-security-center/guardium/vascanner-12.2.0/va-scanner
+  pullPolicy: IfNotPresent
+  # Overrides the image tag whose default is the chart appVersion
+  tag: 'vascanner-v12.2.0'
+# Image pull secrets
+imagePullSecrets:
+  - name: ibm-entitlement-key
+# Registry credentials for pulling images
+registry:
+  username: 'cp'
+  # IBM Entitlement Key from https://myibm.ibm.com/products-services/containerlibrary
+  password: 'eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJpc3MiOiJJQk0gTWFya2V0cGxhY2UiLCJpYXQiOjE3NjkwMjkwMTIsImp0aSI6IjMwODZkMTYxNmU5NjQ2YjZhMjMzM2MxY2I3ZmE0ZGI1In0.ckBrHBWFrqm1rHMmK3LW-wKR4wTtFL2JGoebQO5aY0k'
+  # Your IBM email
+  email: 'cp'
+  # Registry server - use cp.icr.io for entitled software
+  server: cp.icr.io
+# GDP (Guardium Data Protection) Configuration
+gdp:
+  # GDP Server hostname - matches the SSL certificate
+  # Certificate is for: ec2-54-85-148-224.compute-1.amazonaws.com
+  host: 'ec2-18-210-236-82.compute-1.amazonaws.com'
+  hostPort: '8443'
+  agentPort: '8443'
+  # GDP API Key (base64 encoded)
+  # Run ON GDP SERVER: grdapi create_api_key name=vascannereks
+  apiKey: 'ODc5ZWUxZTktNGUwNy00YWJlLWFkYjktYjMxOWM4MTYzZjIz'
+  # VA Agent Name
+  agentName: 'eks-va-scanner-01'
+  # GDP SSL Certificate (base64 encoded, single line)
+  # Run ON YOUR LAPTOP:
+  #   openssl s_client -connect ec2-52-21-60-157.compute-1.amazonaws.com:8443 -showcerts </dev/null 2>/dev/null | openssl x509 -outform PEM | base64 -w 0
+  certBase64: 'LS0tLS1CRUdJTiBDRVJUSUZJQ0FURS0tLS0tCk1JSUVJekNDQXd1Z0F3SUJBZ0lVRVd2bG5RaHpRczNqTlBsc3VZRkozZng3ZWlRd0RRWUpLb1pJaHZjTkFRRUwKQlFBd2daNHhDekFKQmdOVkJBWVRBbFZUTVFzd0NRWURWUVFJREFKTlFURVNNQkFHQTFVRUJ3d0pUR2wwZEd4bApkRzl1TVF3d0NnWURWUVFLREFOSlFrMHhMREFxQmdOVkJBc01JMGQxWVhKa2FYVnRJRUYxZEc4dFIyVnVaWEpoCmRHVmtJRU5sY25ScFptbGpZWFJsTVRJd01BWURWUVFERENsbFl6SXRNVGd0TWpFd0xUSXpOaTA0TWk1amIyMXcKZFhSbExURXVZVzFoZW05dVlYZHpMbU52YlRBZUZ3MHlOakF4TWpFeE5qRTNNamxhRncwek5qQXhNakl4TmpFMwpNamxhTUlHZU1Rc3dDUVlEVlFRR0V3SlZVekVMTUFrR0ExVUVDQXdDVFVFeEVqQVFCZ05WQkFjTUNVeHBkSFJzClpYUnZiakVNTUFvR0ExVUVDZ3dEU1VKTk1Td3dLZ1lEVlFRTERDTkhkV0Z5WkdsMWJTQkJkWFJ2TFVkbGJtVnkKWVhSbFpDQkRaWEowYVdacFkyRjBaVEV5TURBR0ExVUVBd3dwWldNeUxURTRMVEl4TUMweU16WXRPREl1WTI5dApjSFYwWlMweExtRnRZWHB2Ym1GM2N5NWpiMjB3Z2dFaU1BMEdDU3FHU0liM0RRRUJBUVVBQTRJQkR3QXdnZ0VLCkFvSUJBUUNxQWZ3Y29hRFFGbmNBVHhkMlY1b3o5TDNCeUdZUVFzOXF5ZE5NcUt1K3pldlRjbC9TY1NwWlVzTEsKWlFDeUZFbFVGcnVaaEZGVTdMbGxQSUgreGVEcXZuZVVsdGpORDRHVm83QzJvdjJFT2JjdGw2S2s5YUIwRDlwcQplOHFpWlRKRXVjS0dNSVBHcUNnL3d2TFRRWlJrVStRbXZLRGhWYVRRYm85OC94NjYzYTRNYzZ2NTMxUVBMVUZyClF3RUx3VXVIaGt0T3ArL21LTFJIbWJrTStCd1J0NWpQSXlveTNHVW1SZzZxb0JEVksweTVvbzBKbE84Y3BWZWoKVm1Vc3JWNlFYSTFJa0g4eS80TE1lQUNnMHNGdXJtbytTcG9VSVBYWGtxTVQ3UitGL01yUVJ6aEg5UUwzWUlIWAo5ck9pWTkvcFU2M0RTcVlPZHEya0NzV28ranl6QWdNQkFBR2pWekJWTURRR0ExVWRFUVF0TUN1Q0tXVmpNaTB4Ck9DMHlNVEF0TWpNMkxUZ3lMbU52YlhCMWRHVXRNUzVoYldGNmIyNWhkM011WTI5dE1CMEdBMVVkRGdRV0JCVFUKUXV5WnNwb3B4NHpRM3E5WWRVUmV5bVN3M1RBTkJna3Foa2lHOXcwQkFRc0ZBQU9DQVFFQUNBdFgwSUNRTkJqbQo2WkxrS3RhVUxmWjBCekY5K1loTUZCelpFUncyaTQ1YTM1aUxjMzEvRnRYTjd6NXBoUU94TmhZSmU0RGtUa3lECmxzUTNEL0s1UG5TSkJlbUtRUHhTUEU4VXplRGlEdjBaS3E0T1l4Mkt2aExYazBhMG9KdW50Z3J4TDJXZkNVT0EKUFZkUENTNGZEcTMvYngwT1REdC93MHlwVUpyMis1aThGSjdFeWNqSEJENTBXZ09pemhlTG5rbllqd0h6WnN1bQo4bDlwNFlQVS9Qc2pXYlZRTWxUdFJyUVZhUTZJOE1xczJzU2NsaXc0TWd5K3Z2UFdveEc5WHZWVjk3TVk5akloCnIwM1kyRmx6TUppYmNUZno1NDA5dnRBeEdGQ2wvNUhIK1ZsMGlhRFJQMDdMOGltT211SUl0V2xNd2d1OGJiYkgKeG9ydkI0QzYrUT09Ci0tLS0tRU5EIENFUlRJRklDQVRFLS0tLS0K'
+  # Optional: Alternative authentication (if not using API key)
+  username: ''
+  clientId: ''
+  clientPassword: ''
+  clientSecret: ''
+  # Optional: Proxy configuration
+  httpProxyIp: ''
+  httpProxyPort: ''
+  # Optional: Cloud resource name
+  cloudResourceName: ''
+# Service Account
+serviceAccount:
+  create: true
+  name: va-scanner
+  annotations: {}
+# Pod Security Context
+podSecurityContext:
+  runAsNonRoot: true
+  runAsUser: 1000
+  fsGroup: 1000
+# Security Context
+securityContext: {}
+# Resource limits and requests
+resources:
+  limits:
+    cpu: 1000m
+    memory: 2Gi
+  requests:
+    cpu: 250m
+    memory: 512Mi
+# Liveness probe configuration
+livenessProbe:
+  enabled: true
+  exec:
+    command:
+      - /bin/sh
+      - -c
+      - "kill -0 1 2>/dev/null"
+      # Previous working solution: 'ps aux | grep setup.sh | grep -v grep'
+      # Old broken check: 'ps aux | grep -v grep | grep -q java'
+  initialDelaySeconds: 60
+  periodSeconds: 30
+  timeoutSeconds: 5
+  failureThreshold: 3
+# Readiness probe configuration
+readinessProbe:
+  enabled: true
+  exec:
+    command:
+      - /bin/sh
+      - -c
+      - "kill -0 1 2>/dev/null"
+      # Previous working solution: 'ps aux | grep setup.sh | grep -v grep'
+      # Old broken check: 'ps aux | grep -v grep | grep -q java'
+  initialDelaySeconds: 30
+  periodSeconds: 10
+  timeoutSeconds: 5
+  failureThreshold: 3
+# Node selector
+nodeSelector: {}
+# Tolerations
+tolerations: []
+# Affinity rules
+affinity: {}
+# Pod annotations
+podAnnotations: {}
+# Pod labels
+podLabels: {}
+# Deployment strategy
+strategy:
+  type: RollingUpdate
+  rollingUpdate:
+    maxSurge: 25%
+    maxUnavailable: 25%
+# Revision history limit
+revisionHistoryLimit: 10
+# Progress deadline in seconds
+progressDeadlineSeconds: 60
+# Termination grace period
+terminationGracePeriodSeconds: 30
+# Horizontal Pod Autoscaler
+autoscaling:
+  enabled: true
+  minReplicas: 2
+  maxReplicas: 10
+  targetCPUUtilizationPercentage: 70
+  targetMemoryUtilizationPercentage: 80
+  behavior:
+    scaleDown:
+      stabilizationWindowSeconds: 300
+      policies:
+        - type: Percent
+          value: 50
+          periodSeconds: 60
+    scaleUp:
+      stabilizationWindowSeconds: 0
+      policies:
+        - type: Percent
+          value: 100
+          periodSeconds: 30
+        - type: Pods
+          value: 2
+          periodSeconds: 30
+      selectPolicy: Max
+# Volume mounts for certificates
+volumes:
+  cert:
+    name: va-cert
+    mountPath: /var/vascanner/certs
+    readOnly: true
+    defaultMode: 0440
+# DNS Policy
+dnsPolicy: ClusterFirst
+# Restart Policy
+restartPolicy: Always
+# Scheduler Name
+schedulerName: default-scheduler
+# Host Aliases - Not needed since certificate hostname matches actual hostname
+# The certificate is for ec2-54-85-148-224.compute-1.amazonaws.com which resolves correctly
+hostAliases: []
+
