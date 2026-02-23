@@ -1,0 +1,205 @@
+# Default values for va-scanner Helm chart
+# This is a YAML-formatted file.
+# Declare variables to be passed into your templates.
+
+# Namespace configuration
+namespace:
+  create: true
+  name: va-scanner
+  labels:
+    environment: production
+
+# Deployment configuration
+replicaCount: 3
+
+# VA Scanner polling configuration
+# Set this to keep the scanner running and polling for jobs internally
+# instead of relying on Kubernetes pod restarts (which causes CrashLoopBackOff)
+# Value is in minutes. Recommended: 5-15 minutes
+# Leave empty or set to 0 to disable (pod will exit after each scan)
+vaScannerPollInMins: 10
+
+image:
+  repository: docker-na-public.artifactory.swg-devops.com/sec-guardium-next-gen-docker-local/va-scanner
+  pullPolicy: IfNotPresent
+  # Overrides the image tag whose default is the chart appVersion
+  tag: "vascanner_trunk-b823b06-15936-20251125_0327"
+
+# Image pull secrets
+imagePullSecrets:
+  - name: ibm-entitlement-key
+
+# Registry credentials for pulling images
+registry:
+  username: ""  # your-email@ibm.com
+  password: ""  # your-registry-token
+  email: ""     # your-email@ibm.com
+  server: docker-na-public.artifactory.swg-devops.com
+
+# GDP (Guardium Data Protection) Configuration
+gdp:
+  # IMPORTANT: Use the hostname from your certificate (check certificate SAN)
+  # Your certificate is for: guard.yourcompany.com
+  # DO NOT use ec2-52-21-60-157.compute-1.amazonaws.com here!
+  host: "guard.yourcompany.com"
+  hostPort: "8443"
+  agentPort: "8443"
+  
+  # GDP API Key (base64 encoded)
+  # Run ON GDP SERVER: grdapi create_api_key name=vascannereks
+  apiKey: "Y2UwYzg2YzQtMDA5ZC00YTFlLWFiMGEtOTYwYjM1YzQxNTFl"
+  
+  # VA Agent Name
+  agentName: "eks-va-scanner-01"
+  
+  # GDP SSL Certificate (base64 encoded, single line)
+  # Run ON YOUR LAPTOP:
+  #   openssl s_client -connect ec2-52-21-60-157.compute-1.amazonaws.com:8443 -showcerts </dev/null 2>/dev/null | openssl x509 -outform PEM | base64 -w 0
+  certBase64: ""
+  
+  # Optional: Alternative authentication (if not using API key)
+  username: ""
+  clientId: ""
+  clientPassword: ""
+  clientSecret: ""
+  
+  # Optional: Proxy configuration
+  httpProxyIp: ""
+  httpProxyPort: ""
+  
+  # Optional: Cloud resource name
+  cloudResourceName: ""
+
+# Service Account
+serviceAccount:
+  create: true
+  name: va-scanner
+  annotations: {}
+
+# Pod Security Context
+podSecurityContext:
+  runAsNonRoot: true
+  runAsUser: 1000
+  fsGroup: 1000
+
+# Security Context
+securityContext: {}
+
+# Resource limits and requests
+resources:
+  limits:
+    cpu: 1000m
+    memory: 2Gi
+  requests:
+    cpu: 250m
+    memory: 512Mi
+
+# Liveness probe configuration
+livenessProbe:
+  enabled: true
+  exec:
+    command:
+      - /bin/sh
+      - -c
+      - "kill -0 1 2>/dev/null"
+      #  'ps aux | grep setup.sh | grep -v grep'
+      #  'ps aux | grep -v grep | grep -q java'
+  initialDelaySeconds: 60
+  periodSeconds: 30
+  timeoutSeconds: 5
+  failureThreshold: 3
+
+# Readiness probe configuration
+readinessProbe:
+  enabled: true
+  exec:
+    command:
+      - /bin/sh
+      - -c
+      - "kill -0 1 2>/dev/null"
+      # Previous working solution: 'ps aux | grep setup.sh | grep -v grep'
+      # Old broken check: 'ps aux | grep -v grep | grep -q java'
+  initialDelaySeconds: 30
+  periodSeconds: 10
+  timeoutSeconds: 5
+  failureThreshold: 3
+
+# Node selector
+nodeSelector: {}
+
+# Tolerations
+tolerations: []
+
+# Affinity rules
+affinity: {}
+
+# Pod annotations
+podAnnotations: {}
+
+# Pod labels
+podLabels: {}
+
+# Deployment strategy
+strategy:
+  type: RollingUpdate
+  rollingUpdate:
+    maxSurge: 25%
+    maxUnavailable: 25%
+
+# Revision history limit
+revisionHistoryLimit: 10
+
+# Progress deadline in seconds
+progressDeadlineSeconds: 600
+
+# Termination grace period
+terminationGracePeriodSeconds: 30
+
+# Horizontal Pod Autoscaler
+autoscaling:
+  enabled: true
+  minReplicas: 2
+  maxReplicas: 10
+  targetCPUUtilizationPercentage: 70
+  targetMemoryUtilizationPercentage: 80
+  behavior:
+    scaleDown:
+      stabilizationWindowSeconds: 300
+      policies:
+        - type: Percent
+          value: 50
+          periodSeconds: 60
+    scaleUp:
+      stabilizationWindowSeconds: 0
+      policies:
+        - type: Percent
+          value: 100
+          periodSeconds: 30
+        - type: Pods
+          value: 2
+          periodSeconds: 30
+      selectPolicy: Max
+
+# Volume mounts for certificates
+volumes:
+  cert:
+    name: va-cert
+    mountPath: /var/vascanner/certs
+    readOnly: true
+    defaultMode: 0440
+
+# DNS Policy
+dnsPolicy: ClusterFirst
+
+# Restart Policy
+restartPolicy: Always
+
+# Scheduler Name
+schedulerName: default-scheduler
+
+# Host Aliases - Maps certificate hostname to actual GDP server IP
+# REQUIRED: Your certificate is for guard.yourcompany.com but server is at 52.21.60.157
+hostAliases:
+  - ip: "52.21.60.157"  # Your GDP server IP
+    hostnames:
+      - "guard.yourcompany.com"  # Must match gdp.host above
