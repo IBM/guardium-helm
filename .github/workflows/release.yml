@@ -125,17 +125,8 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: Update repository with version changes
-        run: |
-          git add src/va-scanner/Chart.yaml releases/
-          git commit -m "Release ${{ steps.get_version.outputs.tag }}
-          
-          - Updated Chart.yaml version to ${{ steps.get_version.outputs.version }}
-          - Packaged Helm chart
-          - Updated Helm repository index
-          
-          Signed-off-by: $GITHUB_ACTOR <$GITHUB_ACTOR@users.noreply.github.com>" || echo "No changes to commit"
-          git push origin HEAD:main || echo "Could not push to main"
+      # Note: Version changes are NOT pushed back to main automatically
+      # This prevents auto-merging PRs. Update Chart.yaml manually before tagging.
 
   publish-ghcr:
     runs-on: ubuntu-latest
