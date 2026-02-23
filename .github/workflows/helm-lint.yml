@@ -5,15 +5,13 @@ on:
     branches:
       - main
       - master
-    paths:
-      - 'src/**'
-      - '.github/workflows/helm-lint.yml'
+      - rr-gdp-helm
   push:
     branches:
       - main
       - master
-    paths:
-      - 'src/**'
+      - rr-gdp-helm
+  workflow_dispatch:  # Allow manual trigger
 
 jobs:
   lint-test:
