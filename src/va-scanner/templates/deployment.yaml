@@ -33,8 +33,17 @@ spec:
         {{- toYaml . | nindent 8 }}
       {{- end }}
       serviceAccountName: {{ include "va-scanner.serviceAccountName" . }}
+      {{- if .Values.openshift.enabled }}
+      {{- with .Values.openshift.podSecurityContext }}
       securityContext:
-        {{- toYaml .Values.podSecurityContext | nindent 8 }}
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- else }}
+      {{- with .Values.podSecurityContext }}
+      securityContext:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- end }}
       {{- with .Values.hostAliases }}
       hostAliases:
         {{- toYaml . | nindent 8 }}
@@ -145,6 +154,17 @@ spec:
         - name: {{ .Values.volumes.cert.name }}
           mountPath: {{ .Values.volumes.cert.mountPath }}
           readOnly: {{ .Values.volumes.cert.readOnly }}
+        {{- if .Values.openshift.enabled }}
+        {{- with .Values.openshift.securityContext }}
+        securityContext:
+          {{- toYaml . | nindent 10 }}
+        {{- end }}
+        {{- else }}
+        {{- with .Values.securityContext }}
+        securityContext:
+          {{- toYaml . | nindent 10 }}
+        {{- end }}
+        {{- end }}
         resources:
           {{- toYaml .Values.resources | nindent 10 }}
         {{- if .Values.livenessProbe.enabled }}
