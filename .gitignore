@@ -1,0 +1,26 @@
+# Local
+.DS_Store
+.env
+*.local
+*.log*
+*.hvl
+*.backup
+*.tfvars
+*.txt
+*.hcl
+*.pem
+*.terraform
+*.tfstate
+
+# Helm values with sensitive data
+my-values.yaml
+**/my-values.yaml
+src/**/my-values.yaml
+
+# Helm packaged releases (can be regenerated if needed)
+releases/*.tgz
+
+# IDE
+.vscode/*
+!.vscode/extensions.json
+.idea
