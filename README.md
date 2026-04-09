@@ -1,11 +1,11 @@
 # Guardium VA Scanner Helm Chart
 
-Production-ready Helm chart for deploying Guardium Vulnerability Assessment Scanner on Kubernetes.
+Production-ready Helm chart for deploying Guardium Vulnerability Assessment Scanner on Kubernetes, Amazon EKS, and OpenShift.
 
 
 ## Overview
 
-This Helm chart deploys the Guardium Vulnerability Assessment (VA) Scanner on Kubernetes/EKS. The scanner connects to your Guardium Data Protection (GDP) server to perform security assessments on your databases.
+This Helm chart deploys the Guardium Vulnerability Assessment (VA) Scanner on Kubernetes, Amazon EKS, and OpenShift. The scanner connects to your Guardium Data Protection (GDP) server to perform security assessments on your databases.
 
 ## Architecture Overview
 
@@ -45,7 +45,7 @@ This Helm chart deploys the Guardium Vulnerability Assessment (VA) Scanner on Ku
                     ┌──────────────────────────────┐
                     │   Your Local Machine         │
                     │                              │
-                    │  • kubectl (EKS access)      │
+                    │  • kubectl / oc access       │
                     │  • Helm CLI                  │
                     │  • values.yaml config        │
                     └──────────────────────────────┘
@@ -57,7 +57,7 @@ This Helm chart deploys the Guardium Vulnerability Assessment (VA) Scanner on Ku
 |-----------|---------|-------------|
 | **GDP Server** | Central management server for security assessments | Step 1 |
 | **Database (RDS)** | Target database to be assessed for vulnerabilities | Step 2 |
-| **EKS Cluster** | Kubernetes environment hosting the VA Scanner | Step 3 |
+| **Kubernetes / EKS / OCP Cluster** | Container platform hosting the VA Scanner | Step 3 |
 | **VA Scanner (Helm)** | Automated scanner pods that execute assessments | Step 6 |
 | **GDP Data Source** | Configuration linking GDP to your database | Step 4 |
 | **GDP Assessment** | Security test definitions and schedules | Step 5 |
@@ -87,7 +87,7 @@ Follow these steps in order to successfully deploy and configure the VA Scanner:
 
 **Recommended Approach:**
 - ✅ Deploy GDP on **AWS EC2** (or another public cloud provider)
-- ✅ Ensure GDP server's **port 8443** is accessible from your EKS cluster
+- ✅ Ensure GDP server's **port 8443** is accessible from your Kubernetes / EKS / OpenShift cluster
 - ❌ **Avoid IBM Cloud** environments - they may have network restrictions preventing external access
 
 **AWS EC2 Deployment Example:**
@@ -313,21 +313,30 @@ Before deploying the scanner, test the assessment manually:
 
 ### Step 6: Deploy VA Scanner with Helm 🚀
 
-**This is the final step!** Deploy the VA Scanner to your EKS cluster to automate continuous vulnerability assessments.
+**This is the final step!** Deploy the VA Scanner to your Kubernetes, EKS, or OpenShift cluster to automate continuous vulnerability assessments.
 
 ## Installation Methods
 
-You can install the VA Scanner Helm chart using one of three methods:
+You can install the VA Scanner Helm chart using one of three methods. The chart supports standard Kubernetes, Amazon EKS, and OpenShift, but the namespace/project creation flow differs slightly by platform.
 
 ### Method 1: Direct from GitHub Release (Recommended)
 
 ```bash
-# Install directly from GitHub release URL
+# Kubernetes / EKS
 helm install va-scanner \
   https://github.com/IBM/guardium-helm/releases/download/v1.0.0/va-scanner-1.0.0.tgz \
   -f my-values.yaml \
   -n va-scanner \
   --create-namespace
+```
+
+```bash
+# OpenShift
+oc new-project va-scanner
+helm install va-scanner \
+  https://github.com/IBM/guardium-helm/releases/download/v1.0.0/va-scanner-1.0.0.tgz \
+  -f my-values.yaml \
+  -n va-scanner
 ```
 
 ### Method 2: Download and Install
@@ -336,8 +345,14 @@ helm install va-scanner \
 # Download the packaged chart
 curl -LO https://github.com/IBM/guardium-helm/releases/download/v1.0.0/va-scanner-1.0.0.tgz
 
-# Install from local file
+# Kubernetes / EKS
 helm install va-scanner ./va-scanner-1.0.0.tgz -f my-values.yaml -n va-scanner --create-namespace
+```
+
+```bash
+# OpenShift
+oc new-project va-scanner
+helm install va-scanner ./va-scanner-1.0.0.tgz -f my-values.yaml -n va-scanner
 ```
 
 ### Method 3: Clone Repository
@@ -347,8 +362,14 @@ helm install va-scanner ./va-scanner-1.0.0.tgz -f my-values.yaml -n va-scanner -
 git clone https://github.com/IBM/guardium-helm.git
 cd guardium-helm
 
-# Install using local chart from src directory
+# Kubernetes / EKS
 helm install va-scanner ./src/va-scanner -f my-values.yaml -n va-scanner --create-namespace
+```
+
+```bash
+# OpenShift
+oc new-project va-scanner
+helm install va-scanner ./src/va-scanner -f my-values.yaml -n va-scanner
 ```
 
 **Benefits:**
@@ -437,7 +458,7 @@ cp values-example.yaml my-values.yaml
 
 #### 6.3 Configure Your Values
 
-Edit `my-values.yaml` with your specific configuration:
+Edit `my-values.yaml` with your specific configuration.
 
 ```yaml
 # Namespace Configuration
@@ -469,6 +490,10 @@ image:
   tag: "vascanner-v12.2.0"
   pullPolicy: IfNotPresent
 
+# Platform Configuration
+platform:
+  type: kubernetes  # Use "kubernetes" for standard Kubernetes/EKS, or "openshift" for OCP
+
 # Deployment Configuration
 replicaCount: 3  # Number of scanner pods (if HPA is disabled)
 
@@ -490,38 +515,83 @@ autoscaling:
 #     hostnames:
 #       - "guard.yourcompany.com"     # TODO: Must match gdp.host above
 hostAliases: []  # Default: empty (assumes certificate hostname matches)
+
+# Standard Kubernetes / EKS security settings
+podSecurityContext:
+  fsGroup: 10001
+
+# OpenShift-compatible settings
+openshift:
+  enabled: false
+  podSecurityContext: {}
+  securityContext:
+    allowPrivilegeEscalation: false
+    capabilities:
+      drop:
+        - ALL
+    seccompProfile:
+      type: RuntimeDefault
 ```
 
 #### 6.4 Deploy with Helm
 
-Choose one of the installation methods below based on your preference:
+Choose one of the installation methods below based on your preference.
+
+##### Command Differences by Platform
+
+**Kubernetes / EKS**
+- Use `helm install ... --create-namespace` on first install.
+- This is the normal Helm flow when Helm is responsible for namespace creation.
+
+**OpenShift**
+- Create the project first with `oc new-project <name>`.
+- Then use `helm install ... -n <project>` for the first deployment.
+- Use `helm upgrade ... -n <project>` later when you change values or chart versions.
 
 **Method 1: From Cloned Repository**
 ```bash
 # Navigate to the cloned repository
-cd va-scanner-helm
+cd guardium-helm
 
-# Install the Helm chart from src directory
+# Kubernetes / EKS
 helm install va-scanner ./src/va-scanner -f my-values.yaml -n va-scanner --create-namespace
 
 # Watch the deployment progress
 kubectl get pods -n va-scanner -w
 ```
 
+```bash
+# OpenShift
+oc new-project va-scanner
+helm install va-scanner ./src/va-scanner -f my-values.yaml -n va-scanner
+
+# Watch the deployment progress
+oc get pods -n va-scanner -w
+```
+
 **Method 2: From Packaged Tar File**
 ```bash
-# Install from packaged tar file in releases directory
+# Kubernetes / EKS
 helm install va-scanner ./releases/va-scanner-1.0.0.tgz -f my-values.yaml -n va-scanner --create-namespace
 
 # Watch the deployment progress
 kubectl get pods -n va-scanner -w
 ```
 
-**Method 3: Using Helm Git Support**
 ```bash
-# Install directly from Git repository (Helm 3.7+)
+# OpenShift
+oc new-project va-scanner
+helm install va-scanner ./releases/va-scanner-1.0.0.tgz -f my-values.yaml -n va-scanner
+
+# Watch the deployment progress
+oc get pods -n va-scanner -w
+```
+
+**Method 3: Direct from GitHub Release URL**
+```bash
+# Kubernetes / EKS
 helm install va-scanner \
-  git+https://github.ibm.com/Guardium/va-scanner-helm@main?path=src/va-scanner \
+  https://github.com/IBM/guardium-helm/releases/download/v1.0.0/va-scanner-1.0.0.tgz \
   -f my-values.yaml \
   -n va-scanner \
   --create-namespace
@@ -530,7 +600,19 @@ helm install va-scanner \
 kubectl get pods -n va-scanner -w
 ```
 
-**Note:** The `--create-namespace` flag is required for the first installation. It tells Helm to create the namespace before deploying resources.
+```bash
+# OpenShift
+oc new-project va-scanner
+helm install va-scanner \
+  https://github.com/IBM/guardium-helm/releases/download/v1.0.0/va-scanner-1.0.0.tgz \
+  -f my-values.yaml \
+  -n va-scanner
+
+# Watch the deployment progress
+oc get pods -n va-scanner -w
+```
+
+**Note:** For Kubernetes / EKS, `--create-namespace` is typically used on first install. For OpenShift, create the project first with `oc new-project`, then use `helm install`. Use `helm upgrade` later for updates.
 
 **Expected Output:**
 ```
@@ -578,18 +660,34 @@ Using this certificate file for keystore: [ /var/vascanner/certs/vascanner.pem ]
 **🎉 Congratulations!** Your VA Scanner is now deployed and automatically running security assessments on your databases!
 
 ---
+## OpenShift Security Notes
+
+The chart now supports both standard Kubernetes/EKS-style security settings and OpenShift-compatible settings.
+
+- On **Kubernetes / EKS**, it is common to use fixed values such as `runAsUser` and `fsGroup`.
+- On **OpenShift**, Security Context Constraints (SCC) often enforce namespace-assigned UIDs and stricter runtime controls.
+- For OpenShift deployments, prefer:
+  - `platform.type: openshift`
+  - `openshift.enabled: true`
+  - `podSecurityContext: {}`
+  - OpenShift-specific container security settings under `openshift.securityContext`
+
+If your OpenShift cluster blocks the pod with SCC-related errors, review the service account permissions and cluster security policy before changing the chart defaults.
+
+---
+
 ## Prerequisites Summary
 
 Before starting, ensure you have:
 
-- ✅ AWS account with permissions to create EKS clusters and RDS databases
+- ✅ Cloud or on-prem environment with permissions to create Kubernetes, EKS, or OpenShift resources
 - ✅ GDP server deployed and accessible (port 8443 open)
 - ✅ Database instance created (RDS or other)
-- ✅ Kubernetes 1.19+
+- ✅ Kubernetes 1.19+ or compatible OpenShift version
 - ✅ Helm 3.0+
-- ✅ kubectl configured
+- ✅ `kubectl` configured for Kubernetes/EKS, or `oc` configured for OpenShift
 - ✅ IBM Artifactory credentials (for scanner image)
-- ✅ Sufficient EKS permissions (create deployments, secrets, etc.)
+- ✅ Sufficient cluster permissions (deployments, secrets, service accounts, namespaces/projects, etc.)
 
 ## Common Operations
 
