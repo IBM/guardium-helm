@@ -76,14 +76,30 @@ serviceAccount:
   name: va-scanner
   annotations: {}
 
+# Platform compatibility
+platform:
+  type: kubernetes  # kubernetes | openshift
+
 # Pod Security Context
 podSecurityContext:
   runAsNonRoot: true
   runAsUser: 1000
   fsGroup: 1000
 
-# Security Context
+# Container Security Context
 securityContext: {}
+
+# OpenShift-compatible overrides
+openshift:
+  enabled: false
+  podSecurityContext: {}
+  securityContext:
+    allowPrivilegeEscalation: false
+    capabilities:
+      drop:
+        - ALL
+    seccompProfile:
+      type: RuntimeDefault
 
 # Resource limits and requests
 resources:
