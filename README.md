@@ -83,29 +83,21 @@ Follow these steps in order to successfully deploy and configure the VA Scanner:
 
 ### Step 1: Deploy GDP Server 🖥️
 
-This step is shared by both platform paths, but do not assume AWS or EKS only.
-
 **Critical requirement:**
 - The GDP Central Manager must be reachable from the cluster where the scanner runs.
 - Port `8443` must be open from your **EKS / Kubernetes** cluster or your **OpenShift** cluster to the GDP Central Manager.
 - Users must be able to log in to the GDP Central Manager and have CLI access to generate the API key used by the scanner.
+- The user you log in with must be able to run `grdapi` successfully on that GDP system.
 
 **Recommended approach:**
 - Deploy GDP in any environment where your scanner cluster can reach it over `https://<gdp-host>:8443`
 - Ensure the hostname used in `gdp.host` matches the server certificate
-- Ensure the GDP CLI user can run:
+- Ensure the GDP CLI user can log in over SSH and run:
   ```bash
+  ssh user@your-gdp-server
   grdapi create_api_key name=vascanner
   ```
-
-**What matters most:**
-- reachable TCP/8443 from scanner pods to GDP
-- valid certificate hostname
-- API-enabled CLI user on GDP
-- network path from GDP to the target databases as required by your assessment design
-
-**Avoid hard-coding this step to EKS only.** The GDP deployment can support both EKS and OpenShift as long as connectivity, certificate, and CLI/API requirements are satisfied.
-
+- Warning: the SSH user must be a GDP CLI user with access to `grdapi`. If that user cannot run `grdapi`, they cannot generate the API key required by this chart.
 ---
 
 ### Step 2: Create Database on Cloud or On-Prem Environment 🗄️
@@ -323,14 +315,19 @@ Use this path if you are deploying on standard Kubernetes or Amazon EKS.
 
 **GDP API Key:**
 ```bash
-# SSH to your GDP server
+# Log in to the GDP Central Manager CLI
 ssh user@your-gdp-server
+
+# Verify this user can access grdapi
+grdapi
 
 # Create API key for the scanner
 grdapi create_api_key name=vascannereks
 
 # Copy and save the "Encoded API key" from the output
 ```
+
+**Warning:** The SSH user must be a GDP CLI user with permission to run `grdapi`. If the user cannot access `grdapi`, they cannot generate the API key required by this chart.
 
 **GDP Certificate:**
 
@@ -396,6 +393,8 @@ Edit `my-values.yaml` with your specific configuration.
 **GDP access requirements:**
 - You must be able to log in to the **Guardium Data Protection Central Manager**.
 - You need a user with **CLI access** on the GDP system.
+- You must be able to SSH to the GDP system with that user, for example: `ssh user@your-gdp-server`
+- That user must be able to run `grdapi` successfully after login.
 - That user must have enough permission to run `grdapi create_api_key`.
 - The API key used by this chart is created from GDP CLI access, not from the Helm chart itself.
 
