@@ -1,79 +1,158 @@
-# Example values for deploying va-scanner on OpenShift
+# Example values file for VA Scanner Helm Chart
+# Copy this file to my-values.yaml and fill in your actual values
+# DO NOT commit my-values.yaml with sensitive data to version control
+
+# ============================================================================
+# VA Scanner Polling Configuration
+# ============================================================================
+# IMPORTANT: Prevents CrashLoopBackOff when no jobs are available
+# When set, the scanner will keep running and poll for jobs internally
+# instead of exiting (which causes Kubernetes to restart it)
 #
-# Fill these placeholders before deployment:
-# - registry.password: IBM entitlement key
-#   URL: https://myibm.ibm.com/products-services/containerlibrary
-# - gdp.apiKey: base64 API key from GDP
-#   Command on GDP server:
-#     grdapi create_api_key name=vascanner-ocp
-# - gdp.certBase64: single-line base64 certificate
-#   Command from a machine that can reach GDP:
-#     openssl s_client -connect guardium.example.com:8443 -showcerts </dev/null 2>/dev/null | openssl x509 -outform PEM | base64 | tr -d '\n'
-# - project/namespace: create it first on OpenShift
-#   Command:
-#     oc new-project va-scanner
+# Value is in minutes. Recommended: 2-15 minutes
+#   - Lower values (2-5 min): Faster job pickup, more frequent GDP connections
+#   - Higher values (10-15 min): Less network traffic, suitable for scheduled scans
+#
+# Set to 0 or leave empty to disable (pod will exit after each scan - NOT RECOMMENDED)
+vaScannerPollInMins: 5  # Default: 5 minutes (good balance)
+
+# ============================================================================
+# GDP (Guardium Data Protection) Configuration
+# ============================================================================
+gdp:
+  # GDP Server hostname
+  # ⚠️ CRITICAL: Must match the hostname in your SSL certificate
+  #
+  # STEP 1: Check your certificate hostname by running this command:
+  #   openssl s_client -connect YOUR_GDP_HOST:8443 -showcerts </dev/null 2>/dev/null | openssl x509 -noout -text | grep -A2 "Subject Alternative Name"
+  #
+  # Example output:
+  #   X509v3 Subject Alternative Name:
+  #       DNS:guard.yourcompany.com
+  #
+  # STEP 2: Use the DNS name from the certificate output as your host value below
+  # Examples:
+  #   - If cert shows: DNS:guard.yourcompany.com → use 'guard.yourcompany.com'
+  #   - If cert shows: DNS:ec2-54-85-148-224.compute-1.amazonaws.com → use 'ec2-54-85-148-224.compute-1.amazonaws.com'
+  host: 'guard.yourcompany.com'  # TODO: Replace with YOUR certificate DNS name
+  
+  hostPort: '8443'
+  agentPort: '8443'
+  
+  # GDP API Key (base64 encoded)
+  # Run ON GDP SERVER: grdapi create_api_key name=vascannereks
+  # Copy the "Encoded API key" from output
+  apiKey: 'your-base64-encoded-api-key-here'  # TODO: Replace with your actual API key
+  
+  # VA Agent Name - unique identifier for this scanner
+  agentName: 'eks-va-scanner-01'  # TODO: Customize if needed
+  
+  # GDP SSL Certificate (base64 encoded, single line)
+  # Run ON YOUR LAPTOP (replace YOUR_GDP_HOST with your GDP server):
+  #   openssl s_client -connect YOUR_GDP_HOST:8443 -showcerts </dev/null 2>/dev/null | openssl x509 -outform PEM | base64 | tr -d '\n'
+  #
+  # Example:
+  #   openssl s_client -connect guard.yourcompany.com:8443 -showcerts </dev/null 2>/dev/null | openssl x509 -outform PEM | base64 | tr -d '\n'
+  certBase64: 'your-base64-encoded-certificate-here'  # TODO: Replace with your actual certificate
+  
+  # Optional: Alternative authentication (if not using API key)
+  username: ''
+  clientId: ''
+  clientPassword: ''
+  clientSecret: ''
+  
+  # Optional: Proxy configuration
+  httpProxyIp: ''
+  httpProxyPort: ''
+  
+  # Optional: Cloud resource name
+  cloudResourceName: ''
+
+# ============================================================================
+# ⚠️ Host Aliases for DNS Resolution (ONLY if needed)
+# ============================================================================
+# ONLY REQUIRED when your certificate hostname differs from actual server hostname/IP
+#
+# Example scenario:
+#   - Your GDP server IP: 52.21.60.157
+#   - Your certificate DNS name: guard.yourcompany.com
+#   - In this case, you NEED host aliases to map the DNS name to the IP
+#
+# To check if you need this:
+#   1. Run: openssl s_client -connect YOUR_GDP_HOST:8443 -showcerts </dev/null 2>/dev/null | openssl x509 -noout -text | grep -A2 "Subject Alternative Name"
+#   2. Compare the DNS name from certificate with your gdp.host value above
+#   3. If they MATCH → use empty array: hostAliases: []
+#   4. If they DIFFER → uncomment and configure below:
+#
+# hostAliases:
+#   - ip: '52.21.60.157'  # TODO: Your GDP server's actual IP address
+#     hostnames:
+#       - 'guard.yourcompany.com'  # TODO: Must match gdp.host above
+#
+# Default: Empty (assumes certificate hostname matches actual hostname)
+hostAliases: []
+
+# ============================================================================
+# Registry Configuration (for pulling scanner image from IBM Container Registry)
+# ============================================================================
+registry:
+  # For IBM Container Registry (cp.icr.io) - use 'cp' as username
+  username: 'cp'
+  
+  # IBM Entitlement Key
+  # Get from: https://myibm.ibm.com/products-services/containerlibrary
+  # Click "Copy entitlement key" button
+  password: 'your-ibm-entitlement-key-here'
+  
+  # Email (use 'cp' for entitled software)
+  email: 'cp'
+  
+  # Registry server - use cp.icr.io for IBM entitled software
+  server: cp.icr.io
+
+# ============================================================================
+# Scanner Image Configuration
+# ============================================================================
+image:
+  # IBM Container Registry path for VA Scanner
+  repository: cp.icr.io/cp/ibm-guardium-data-security-center/guardium/vascanner-12.2.0/va-scanner
+  pullPolicy: IfNotPresent
+  
+  # Scanner image tag
+  # Check available tags at: https://myibm.ibm.com/products-services/containerlibrary
+  tag: 'vascanner-v12.2.0'
+
+# ============================================================================
+# Deployment Configuration
+# ============================================================================
+
+# Kubernetes namespace
 namespace:
-  create: false
-  name: va-scanner
+  create: true
+  name: va-scanner6
   labels:
     environment: production
 
+# Number of scanner replicas (ignored if autoscaling is enabled)
 replicaCount: 3
 
-vaScannerPollInMins: 5
-
-image:
-  repository: cp.icr.io/cp/ibm-guardium-data-security-center/guardium/vascanner-12.2.0/va-scanner
-  pullPolicy: IfNotPresent
-  tag: "vascanner-v12.2.0"
-
+# Image pull secrets
 imagePullSecrets:
   - name: ibm-entitlement-key
 
-registry:
-  username: "cp"
-  password: "REPLACE_WITH_IBM_ENTITLEMENT_KEY" # https://myibm.ibm.com/products-services/containerlibrary
-  email: "cp"
-  server: cp.icr.io
-
-gdp:
-  host: "guardium.example.com" # Must match the server certificate hostname
-  hostPort: "8443"
-  agentPort: "8443"
-  apiKey: "REPLACE_WITH_BASE64_API_KEY" # grdapi create_api_key name=vascanner-ocp
-  agentName: "ocp-va-scanner-01"
-  certBase64: "REPLACE_WITH_SINGLE_LINE_BASE64_CERTIFICATE" # openssl s_client -connect guardium.example.com:8443 -showcerts </dev/null 2>/dev/null | openssl x509 -outform PEM | base64 | tr -d '\n'
-  username: ""
-  clientId: ""
-  clientPassword: ""
-  clientSecret: ""
-  httpProxyIp: ""
-  httpProxyPort: ""
-  cloudResourceName: ""
-
+# Service Account
 serviceAccount:
   create: true
   name: va-scanner
   annotations: {}
 
-platform:
-  type: openshift
+# Pod Security Context
+podSecurityContext:
+  runAsNonRoot: true
+  runAsUser: 1000
+  fsGroup: 1000
 
-podSecurityContext: {}
-
-securityContext: {}
-
-openshift:
-  enabled: true
-  podSecurityContext: {}
-  securityContext:
-    allowPrivilegeEscalation: false
-    capabilities:
-      drop:
-        - ALL
-    seccompProfile:
-      type: RuntimeDefault
-
+# Resource limits and requests
 resources:
   limits:
     cpu: 1000m
@@ -82,50 +161,9 @@ resources:
     cpu: 250m
     memory: 512Mi
 
-livenessProbe:
-  enabled: true
-  exec:
-    command:
-      - /bin/sh
-      - -c
-      - "kill -0 1 2>/dev/null"
-  initialDelaySeconds: 60
-  periodSeconds: 30
-  timeoutSeconds: 5
-  failureThreshold: 3
-
-readinessProbe:
-  enabled: true
-  exec:
-    command:
-      - /bin/sh
-      - -c
-      - "kill -0 1 2>/dev/null"
-  initialDelaySeconds: 30
-  periodSeconds: 10
-  timeoutSeconds: 5
-  failureThreshold: 3
-
-nodeSelector: {}
-
-tolerations: []
-
-affinity: {}
-
-podAnnotations: {}
-
-podLabels: {}
-
-strategy:
-  type: RollingUpdate
-  rollingUpdate:
-    maxSurge: 25%
-    maxUnavailable: 25%
-
-revisionHistoryLimit: 10
-progressDeadlineSeconds: 60
-terminationGracePeriodSeconds: 30
-
+# ============================================================================
+# Autoscaling Configuration
+# ============================================================================
 autoscaling:
   enabled: true
   minReplicas: 2
@@ -150,6 +188,67 @@ autoscaling:
           periodSeconds: 30
       selectPolicy: Max
 
+# ============================================================================
+# Health Checks
+# ============================================================================
+livenessProbe:
+  enabled: true
+  exec:
+    command:
+      - /bin/sh
+      - -c
+      - "kill -0 1 2>/dev/null"
+  initialDelaySeconds: 60
+  periodSeconds: 30
+  timeoutSeconds: 5
+  failureThreshold: 3
+readinessProbe:
+  enabled: true
+  exec:
+    command:
+      - /bin/sh
+      - -c
+      - "kill -0 1 2>/dev/null"
+  initialDelaySeconds: 30
+  periodSeconds: 10
+  timeoutSeconds: 5
+  failureThreshold: 3
+# ============================================================================
+# Advanced Configuration (usually no need to change)
+# ============================================================================
+
+# Deployment strategy
+strategy:
+  type: RollingUpdate
+  rollingUpdate:
+    maxSurge: 25%
+    maxUnavailable: 25%
+
+# Pod annotations
+podAnnotations: {}
+
+# Pod labels
+podLabels: {}
+
+# Node selector
+nodeSelector: {}
+
+# Tolerations
+tolerations: []
+
+# Affinity rules
+affinity: {}
+
+# Revision history limit
+revisionHistoryLimit: 10
+
+# Progress deadline in seconds
+progressDeadlineSeconds: 600
+
+# Termination grace period
+terminationGracePeriodSeconds: 30
+
+# Volume configuration
 volumes:
   cert:
     name: va-cert
@@ -157,10 +256,11 @@ volumes:
     readOnly: true
     defaultMode: 0440
 
+# DNS Policy
 dnsPolicy: ClusterFirst
+
+# Restart Policy
 restartPolicy: Always
+
+# Scheduler Name
 schedulerName: default-scheduler
-
-hostAliases: [] # Usually empty when gdp.host already matches the certificate hostname
-
-# 
