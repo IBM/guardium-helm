@@ -83,43 +83,41 @@ Follow these steps in order to successfully deploy and configure the VA Scanner:
 
 ### Step 1: Deploy GDP Server 🖥️
 
-**⚠️ Critical Requirement:** The GDP server must be deployed in an environment where port 8443 is accessible from non-IBM addresses.
+This step is shared by both platform paths, but do not assume AWS or EKS only.
 
-**Recommended Approach:**
-- ✅ Deploy GDP on **AWS EC2** (or another public cloud provider)
-- ✅ Ensure GDP server's **port 8443** is accessible from your Kubernetes / EKS / OpenShift cluster
-- ❌ **Avoid IBM Cloud** environments - they may have network restrictions preventing external access
+**Critical requirement:**
+- The GDP Central Manager must be reachable from the cluster where the scanner runs.
+- Port `8443` must be open from your **EKS / Kubernetes** cluster or your **OpenShift** cluster to the GDP Central Manager.
+- Users must be able to log in to the GDP Central Manager and have CLI access to generate the API key used by the scanner.
 
-**AWS EC2 Deployment Example:**
-```bash
-# 1. Launch EC2 instance with appropriate instance type
-# 2. Configure Security Group to allow inbound traffic on port 8443
-# 3. Install and configure Guardium Data Protection
-# 4. Verify GDP is accessible: https://your-gdp-ip:8443
-```
+**Recommended approach:**
+- Deploy GDP in any environment where your scanner cluster can reach it over `https://<gdp-host>:8443`
+- Ensure the hostname used in `gdp.host` matches the server certificate
+- Ensure the GDP CLI user can run:
+  ```bash
+  grdapi create_api_key name=vascanner
+  ```
 
-**Security Group Configuration:**
-- Inbound Rule: TCP port 8443 from your EKS cluster CIDR or security group
-- Outbound Rule: Allow all (for database connectivity)
+**What matters most:**
+- reachable TCP/8443 from scanner pods to GDP
+- valid certificate hostname
+- API-enabled CLI user on GDP
+- network path from GDP to the target databases as required by your assessment design
+
+**Avoid hard-coding this step to EKS only.** The GDP deployment can support both EKS and OpenShift as long as connectivity, certificate, and CLI/API requirements are satisfied.
 
 ---
 
-### Step 2: Create Database on Cloud Environment 🗄️
+### Step 2: Create Database on Cloud or On-Prem Environment 🗄️
 
-Create a database instance in your cloud environment (e.g., AWS RDS) that will be assessed for vulnerabilities.
-
-**AWS RDS Example:**
-```bash
-# Create RDS instance via AWS Console or CLI
-# Important: Note down these connection details:
-```
+Create a database instance that will be assessed for vulnerabilities.
 
 **Required Information:**
-- 📍 **Database endpoint** (e.g., `mydb.abc123.us-east-1.rds.amazonaws.com`)
-- 🔌 **Port** (1521 for Oracle, 3306 for MySQL, 5432 for PostgreSQL)
-- 🏷️ **Database name/Service name**
-- 👤 **Master username**
-- 🔑 **Master password**
+- 📍 **Database endpoint**
+- 🔌 **Port**
+- 🏷️ **Database name / service name**
+- 👤 **Username**
+- 🔑 **Password**
 
 **Supported Database Types:**
 - ✅ Oracle Database
@@ -128,21 +126,23 @@ Create a database instance in your cloud environment (e.g., AWS RDS) that will b
 - ✅ Microsoft SQL Server
 - ✅ IBM DB2
 - ✅ MongoDB
-- ✅ And other Guardium-supported databases
+- ✅ Other Guardium-supported databases
 
 **Network Configuration:**
-- Ensure database security group allows connections from GDP server
-- For RDS: Enable public accessibility or use VPC peering if needed
+- Ensure the required network path exists for the GDP / scanner deployment model you are using
+- Ensure firewalls, security groups, routes, and policies allow the required traffic
 
 ---
 
-### Step 3: Setup EKS Cluster ☸️
+### Step 3: Prepare Your Cluster Access ☸️
 
-Create and configure your Amazon EKS cluster with proper permissions for deploying the VA Scanner.
+This step is platform-specific. Follow only one path.
 
-#### 3.1 Create EKS Cluster
+#### If you are using EKS / Kubernetes
 
-**Using eksctl (Recommended):**
+Prepare `kubectl` access and verify you can deploy into the target namespace.
+
+**Typical EKS example**
 ```bash
 eksctl create cluster \
   --name va-scanner-cluster \
@@ -153,60 +153,30 @@ eksctl create cluster \
   --nodes-min 2 \
   --nodes-max 4 \
   --managed
-```
 
-**Or use AWS Console:**
-
-<img width="1580" alt="EKS Cluster Creation" src="https://github.ibm.com/user-attachments/assets/3244636f-4368-4c55-8ea2-a3c436aaae54" />
-
-#### 3.2 Configure kubectl Access
-
-```bash
-# Update kubeconfig to access your cluster
 aws eks update-kubeconfig --region us-east-1 --name va-scanner-cluster
-
-# Verify connection
 kubectl get nodes
-```
-
-#### 3.3 Verify Authentication
-
-```bash
-# Check current context
 kubectl config current-context
-# Expected output: arn:aws:eks:us-east-1:ACCOUNT_ID:cluster/va-scanner-cluster
-```
-
-```bash
-# Verify cluster info
 kubectl cluster-info
-# Expected output:
-# Kubernetes control plane is running at https://...
-# CoreDNS is running at https://...
+kubectl auth can-i create deployments -n va-scanner
+kubectl auth can-i create secrets -n va-scanner
+kubectl auth can-i create serviceaccounts -n va-scanner
+kubectl auth can-i create hpa -n va-scanner
 ```
 
-#### 3.4 Create Namespace
+#### If you are using OpenShift
+
+Prepare `oc` access and verify you can create or use a project.
 
 ```bash
-# Create dedicated namespace for VA Scanner
-kubectl create namespace va-scanner
-
-# Verify namespace creation
-kubectl get namespaces | grep va-scanner
+oc login --server=https://api.example.openshift.cluster:6443 --token=<your-token>
+oc whoami
+oc new-project va-scanner
+oc project va-scanner
+oc auth can-i create deployments -n va-scanner
+oc auth can-i create secrets -n va-scanner
+oc auth can-i create serviceaccounts -n va-scanner
 ```
-
-#### 3.5 Verify Permissions
-
-Ensure you have sufficient RBAC permissions:
-
-```bash
-# Test required permissions
-kubectl auth can-i create deployments -n va-scanner      # Should return: yes
-kubectl auth can-i create secrets -n va-scanner          # Should return: yes
-kubectl auth can-i create serviceaccounts -n va-scanner  # Should return: yes
-kubectl auth can-i create hpa -n va-scanner              # Should return: yes
-```
-
 
 ---
 
