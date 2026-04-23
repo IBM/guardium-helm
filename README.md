@@ -212,7 +212,9 @@ Follow these steps in the GDP console:
 5. **Click** **Test Connection** to verify connectivity
 6. **Click** **Save** to store the data source
 
-<img width="1680" alt="GDP Data Source Configuration" src="https://github.ibm.com/user-attachments/assets/c2b97c31-b60d-4d7f-a2f6-23e3b296c680" />
+![GDP Data Source Definitions](docs/images/deploy_to_cloud_yaml_data_source.png)
+
+![GDP Add Data Source](docs/images/deploy_to_cloud_yaml_add_data_source.png)
 
 **✅ Success Indicator:** You should see "Connection successful" message before saving.
 
@@ -239,9 +241,9 @@ Configure the vulnerability assessment tests that will run on your database.
 2. **Select** the data source you created in Step 4
 3. **Click** **Save**
 
-<img width="1603" alt="Adding Data Source to Assessment" src="https://github.ibm.com/user-attachments/assets/fbb80ac4-7834-4a15-b0a0-3f866befecd9" />
+![Security Assessment Builder](docs/images/deploy_to_cloud_yaml_data_source_select.png)
 
-<img width="1473" alt="Data Source Selection" src="https://github.ibm.com/user-attachments/assets/bfe2dd80-c71c-4cc6-9db9-f8e016a387c2" />
+![Data Source Selection](docs/images/deploy_to_cloud_yaml_add_data_source.png)
 
 #### 5.4 Configure Security Tests
 
@@ -258,7 +260,7 @@ Configure the vulnerability assessment tests that will run on your database.
    - ✅ And many more...
 5. **Click** **Save**
 
-<img width="1489" alt="Configuring Security Tests" src="https://github.ibm.com/user-attachments/assets/0d27f2a2-afd6-4efe-81d2-f62bf6ed9f4d" />
+![Configure Security Tests](docs/images/deploy_to_cloud_yaml_security_tests.png)
 
 #### 5.5 Run Assessment (Test)
 
