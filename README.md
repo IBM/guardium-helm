@@ -83,43 +83,33 @@ Follow these steps in order to successfully deploy and configure the VA Scanner:
 
 ### Step 1: Deploy GDP Server 🖥️
 
-**⚠️ Critical Requirement:** The GDP server must be deployed in an environment where port 8443 is accessible from non-IBM addresses.
+**Critical requirement:**
+- The GDP Central Manager must be reachable from the cluster where the scanner runs.
+- Port `8443` must be open from your **EKS / Kubernetes** cluster or your **OpenShift** cluster to the GDP Central Manager.
+- Users must be able to log in to the GDP Central Manager and have CLI access to generate the API key used by the scanner.
+- The user you log in with must be able to run `grdapi` successfully on that GDP system.
 
-**Recommended Approach:**
-- ✅ Deploy GDP on **AWS EC2** (or another public cloud provider)
-- ✅ Ensure GDP server's **port 8443** is accessible from your Kubernetes / EKS / OpenShift cluster
-- ❌ **Avoid IBM Cloud** environments - they may have network restrictions preventing external access
-
-**AWS EC2 Deployment Example:**
-```bash
-# 1. Launch EC2 instance with appropriate instance type
-# 2. Configure Security Group to allow inbound traffic on port 8443
-# 3. Install and configure Guardium Data Protection
-# 4. Verify GDP is accessible: https://your-gdp-ip:8443
-```
-
-**Security Group Configuration:**
-- Inbound Rule: TCP port 8443 from your EKS cluster CIDR or security group
-- Outbound Rule: Allow all (for database connectivity)
-
+**Recommended approach:**
+- Deploy GDP in any environment where your scanner cluster can reach it over `https://<gdp-host>:8443`
+- Ensure the hostname used in `gdp.host` matches the server certificate
+- Ensure the GDP CLI user can log in over SSH and run:
+  ```bash
+  ssh user@your-gdp-server
+  grdapi create_api_key name=vascanner
+  ```
+- Warning: the SSH user must be a GDP CLI user with access to `grdapi`. If that user cannot run `grdapi`, they cannot generate the API key required by this chart.
 ---
 
-### Step 2: Create Database on Cloud Environment 🗄️
+### Step 2: Create Database on Cloud or On-Prem Environment 🗄️
 
-Create a database instance in your cloud environment (e.g., AWS RDS) that will be assessed for vulnerabilities.
-
-**AWS RDS Example:**
-```bash
-# Create RDS instance via AWS Console or CLI
-# Important: Note down these connection details:
-```
+Create a database instance that will be assessed for vulnerabilities.
 
 **Required Information:**
-- 📍 **Database endpoint** (e.g., `mydb.abc123.us-east-1.rds.amazonaws.com`)
-- 🔌 **Port** (1521 for Oracle, 3306 for MySQL, 5432 for PostgreSQL)
-- 🏷️ **Database name/Service name**
-- 👤 **Master username**
-- 🔑 **Master password**
+- 📍 **Database endpoint**
+- 🔌 **Port**
+- 🏷️ **Database name / service name**
+- 👤 **Username**
+- 🔑 **Password**
 
 **Supported Database Types:**
 - ✅ Oracle Database
@@ -128,21 +118,23 @@ Create a database instance in your cloud environment (e.g., AWS RDS) that will b
 - ✅ Microsoft SQL Server
 - ✅ IBM DB2
 - ✅ MongoDB
-- ✅ And other Guardium-supported databases
+- ✅ Other Guardium-supported databases
 
 **Network Configuration:**
-- Ensure database security group allows connections from GDP server
-- For RDS: Enable public accessibility or use VPC peering if needed
+- Ensure the required network path exists for the GDP / scanner deployment model you are using
+- Ensure firewalls, security groups, routes, and policies allow the required traffic
 
 ---
 
-### Step 3: Setup EKS Cluster ☸️
+### Step 3: Prepare Your Cluster Access ☸️
 
-Create and configure your Amazon EKS cluster with proper permissions for deploying the VA Scanner.
+This step is platform-specific. Follow only one path.
 
-#### 3.1 Create EKS Cluster
+#### If you are using EKS / Kubernetes
 
-**Using eksctl (Recommended):**
+Prepare `kubectl` access and verify you can deploy into the target namespace.
+
+**Typical EKS example**
 ```bash
 eksctl create cluster \
   --name va-scanner-cluster \
@@ -153,60 +145,30 @@ eksctl create cluster \
   --nodes-min 2 \
   --nodes-max 4 \
   --managed
-```
 
-**Or use AWS Console:**
-
-<img width="1580" alt="EKS Cluster Creation" src="https://github.ibm.com/user-attachments/assets/3244636f-4368-4c55-8ea2-a3c436aaae54" />
-
-#### 3.2 Configure kubectl Access
-
-```bash
-# Update kubeconfig to access your cluster
 aws eks update-kubeconfig --region us-east-1 --name va-scanner-cluster
-
-# Verify connection
 kubectl get nodes
-```
-
-#### 3.3 Verify Authentication
-
-```bash
-# Check current context
 kubectl config current-context
-# Expected output: arn:aws:eks:us-east-1:ACCOUNT_ID:cluster/va-scanner-cluster
-```
-
-```bash
-# Verify cluster info
 kubectl cluster-info
-# Expected output:
-# Kubernetes control plane is running at https://...
-# CoreDNS is running at https://...
+kubectl auth can-i create deployments -n va-scanner
+kubectl auth can-i create secrets -n va-scanner
+kubectl auth can-i create serviceaccounts -n va-scanner
+kubectl auth can-i create hpa -n va-scanner
 ```
 
-#### 3.4 Create Namespace
+#### If you are using OpenShift
+
+Prepare `oc` access and verify you can create or use a project.
 
 ```bash
-# Create dedicated namespace for VA Scanner
-kubectl create namespace va-scanner
-
-# Verify namespace creation
-kubectl get namespaces | grep va-scanner
+oc login --server=https://api.example.openshift.cluster:6443 --token=<your-token>
+oc whoami
+oc new-project va-scanner
+oc project va-scanner
+oc auth can-i create deployments -n va-scanner
+oc auth can-i create secrets -n va-scanner
+oc auth can-i create serviceaccounts -n va-scanner
 ```
-
-#### 3.5 Verify Permissions
-
-Ensure you have sufficient RBAC permissions:
-
-```bash
-# Test required permissions
-kubectl auth can-i create deployments -n va-scanner      # Should return: yes
-kubectl auth can-i create secrets -n va-scanner          # Should return: yes
-kubectl auth can-i create serviceaccounts -n va-scanner  # Should return: yes
-kubectl auth can-i create hpa -n va-scanner              # Should return: yes
-```
-
 
 ---
 
@@ -250,7 +212,9 @@ Follow these steps in the GDP console:
 5. **Click** **Test Connection** to verify connectivity
 6. **Click** **Save** to store the data source
 
-<img width="1680" alt="GDP Data Source Configuration" src="https://github.ibm.com/user-attachments/assets/c2b97c31-b60d-4d7f-a2f6-23e3b296c680" />
+![GDP Data Source Definitions](docs/images/deploy_to_cloud_yaml_data_source.png)
+
+![GDP Add Data Source](docs/images/deploy_to_cloud_yaml_add_data_source.png)
 
 **✅ Success Indicator:** You should see "Connection successful" message before saving.
 
@@ -277,9 +241,9 @@ Configure the vulnerability assessment tests that will run on your database.
 2. **Select** the data source you created in Step 4
 3. **Click** **Save**
 
-<img width="1603" alt="Adding Data Source to Assessment" src="https://github.ibm.com/user-attachments/assets/fbb80ac4-7834-4a15-b0a0-3f866befecd9" />
+![Security Assessment Builder](docs/images/deploy_to_cloud_yaml_data_source_select.png)
 
-<img width="1473" alt="Data Source Selection" src="https://github.ibm.com/user-attachments/assets/bfe2dd80-c71c-4cc6-9db9-f8e016a387c2" />
+![Data Source Selection](docs/images/deploy_to_cloud_yaml_add_data_source.png)
 
 #### 5.4 Configure Security Tests
 
@@ -296,7 +260,7 @@ Configure the vulnerability assessment tests that will run on your database.
    - ✅ And many more...
 5. **Click** **Save**
 
-<img width="1489" alt="Configuring Security Tests" src="https://github.ibm.com/user-attachments/assets/0d27f2a2-afd6-4efe-81d2-f62bf6ed9f4d" />
+![Configure Security Tests](docs/images/deploy_to_cloud_yaml_security_tests.png)
 
 #### 5.5 Run Assessment (Test)
 
@@ -315,97 +279,57 @@ Before deploying the scanner, test the assessment manually:
 
 **This is the final step!** Deploy the VA Scanner to your Kubernetes, EKS, or OpenShift cluster to automate continuous vulnerability assessments.
 
-## Installation Methods
+## Installation Guide
 
-You can install the VA Scanner Helm chart using one of three methods. The chart supports standard Kubernetes, Amazon EKS, and OpenShift, but the namespace/project creation flow differs slightly by platform.
+Start here by choosing your platform.
 
-### Method 1: Direct from GitHub Release (Recommended)
+### Platform Decision
 
-```bash
-# Kubernetes / EKS
-helm install va-scanner \
-  https://github.com/IBM/guardium-helm/releases/download/v1.0.0/va-scanner-1.0.0.tgz \
-  -f my-values.yaml \
-  -n va-scanner \
-  --create-namespace
-```
+- If you deploy on **Amazon EKS** or another **standard Kubernetes** cluster, follow **Path A: EKS / Kubernetes**
+- If you deploy on **Red Hat OpenShift**, follow **Path B: OpenShift**
 
-```bash
-# OpenShift
-oc new-project va-scanner
-helm install va-scanner \
-  https://github.com/IBM/guardium-helm/releases/download/v1.0.0/va-scanner-1.0.0.tgz \
-  -f my-values.yaml \
-  -n va-scanner
-```
+Do not mix the two paths:
+- use the matching example values file
+- use the matching namespace/project command flow
+- use the matching security settings
 
-### Method 2: Download and Install
+### Quick Start File Mapping
 
-```bash
-# Download the packaged chart
-curl -LO https://github.com/IBM/guardium-helm/releases/download/v1.0.0/va-scanner-1.0.0.tgz
+| Platform | Copy this file | Namespace creation | Install pattern |
+|----------|----------------|-------------------|-----------------|
+| **EKS / Kubernetes** | `cp my-values-eks-example.yaml my-values.yaml` | Helm creates namespace | `helm install ... --create-namespace` |
+| **OpenShift** | `cp my-values-openshift-example.yaml my-values.yaml` | Create project first with `oc new-project` | `helm install ... -n <project>` |
 
-# Kubernetes / EKS
-helm install va-scanner ./va-scanner-1.0.0.tgz -f my-values.yaml -n va-scanner --create-namespace
-```
+### Chart Source Options
 
-```bash
-# OpenShift
-oc new-project va-scanner
-helm install va-scanner ./va-scanner-1.0.0.tgz -f my-values.yaml -n va-scanner
-```
-
-### Method 3: Clone Repository
-
-```bash
-# Clone the repository
-git clone https://github.com/IBM/guardium-helm.git
-cd guardium-helm
-
-# Kubernetes / EKS
-helm install va-scanner ./src/va-scanner -f my-values.yaml -n va-scanner --create-namespace
-```
-
-```bash
-# OpenShift
-oc new-project va-scanner
-helm install va-scanner ./src/va-scanner -f my-values.yaml -n va-scanner
-```
-
-**Benefits:**
-- ✅ Install specific version by tag
-- ✅ No need to clone with Git
-- ✅ Works with curl/wget
+After choosing your platform path below, you can install using any of these chart sources:
+- **Direct GitHub release URL** for the simplest production install
+- **Downloaded `.tgz` package** for offline or controlled installs
+- **Cloned repository** for development and customization
 
 ---
 
-## Summary: Which Method to Use?
+### Path A: EKS / Kubernetes
 
-| Method | Best For | Pros | Cons |
-|--------|----------|------|------|
-| **Method 1: Direct URL** | Production, quick install | No download needed, always latest | Requires internet |
-| **Method 2: Download** | Air-gapped, offline | Single file, portable | Manual download |
-| **Method 3: Clone** | Development, customization | Full source, can modify | Requires Git |
-
-**Recommendation:**
-- **Production:** Use Method 1 (direct URL)
-- **Air-gapped:** Use Method 2 (download .tgz)
-- **Development:** Use Method 3 (clone repository)
-
----
+Use this path if you are deploying on standard Kubernetes or Amazon EKS.
 
 #### 6.1 Gather Required Credentials
 
 **GDP API Key:**
 ```bash
-# SSH to your GDP server
+# Log in to the GDP Central Manager CLI
 ssh user@your-gdp-server
+
+# Verify this user can access grdapi
+grdapi
 
 # Create API key for the scanner
 grdapi create_api_key name=vascannereks
 
 # Copy and save the "Encoded API key" from the output
 ```
+
+**Warning:** The SSH user must be a GDP CLI user with permission to run `grdapi`. If the user cannot access `grdapi`, they cannot generate the API key required by this chart.
 
 **GDP Certificate:**
 
@@ -448,17 +372,33 @@ Get your IBM Entitlement Key for pulling the scanner image:
 
 #### 6.2 Prepare Helm Values File
 
+For **EKS / Kubernetes**, use the **EKS example file**, not the OpenShift file.
+
 ```bash
 # Navigate to the Helm chart directory
 cd src/va-scanner
 
-# Copy the example values file
-cp values-example.yaml my-values.yaml
+# Copy the EKS example file
+cp my-values-eks-example.yaml my-values.yaml
 ```
+
+Use this file:
+- `my-values-eks-example.yaml`
+
+Do not use:
+- `my-values-openshift-example.yaml`
 
 #### 6.3 Configure Your Values
 
 Edit `my-values.yaml` with your specific configuration.
+
+**GDP access requirements:**
+- You must be able to log in to the **Guardium Data Protection Central Manager**.
+- You need a user with **CLI access** on the GDP system.
+- You must be able to SSH to the GDP system with that user, for example: `ssh user@your-gdp-server`
+- That user must be able to run `grdapi` successfully after login.
+- That user must have enough permission to run `grdapi create_api_key`.
+- The API key used by this chart is created from GDP CLI access, not from the Helm chart itself.
 
 ```yaml
 # Namespace Configuration
@@ -492,7 +432,7 @@ image:
 
 # Platform Configuration
 platform:
-  type: kubernetes  # Use "kubernetes" for standard Kubernetes/EKS, or "openshift" for OCP
+  type: kubernetes  # EKS / standard Kubernetes
 
 # Deployment Configuration
 replicaCount: 3  # Number of scanner pods (if HPA is disabled)
@@ -520,99 +460,51 @@ hostAliases: []  # Default: empty (assumes certificate hostname matches)
 podSecurityContext:
   fsGroup: 10001
 
-# OpenShift-compatible settings
+# OpenShift settings are not used in the EKS path
 openshift:
   enabled: false
-  podSecurityContext: {}
-  securityContext:
-    allowPrivilegeEscalation: false
-    capabilities:
-      drop:
-        - ALL
-    seccompProfile:
-      type: RuntimeDefault
 ```
 
 #### 6.4 Deploy with Helm
 
-Choose one of the installation methods below based on your preference.
+For **EKS / Kubernetes**:
+- start from `my-values-eks-example.yaml`
+- keep `platform.type: kubernetes`
+- use `helm install ... --create-namespace` on first install
 
-##### Command Differences by Platform
+Choose one chart source:
 
-**Kubernetes / EKS**
-- Use `helm install ... --create-namespace` on first install.
-- This is the normal Helm flow when Helm is responsible for namespace creation.
-
-**OpenShift**
-- Create the project first with `oc new-project <name>`.
-- Then use `helm install ... -n <project>` for the first deployment.
-- Use `helm upgrade ... -n <project>` later when you change values or chart versions.
-
-**Method 1: From Cloned Repository**
+**Option 1: Direct GitHub release URL**
 ```bash
-# Navigate to the cloned repository
-cd guardium-helm
-
-# Kubernetes / EKS
-helm install va-scanner ./src/va-scanner -f my-values.yaml -n va-scanner --create-namespace
-
-# Watch the deployment progress
-kubectl get pods -n va-scanner -w
-```
-
-```bash
-# OpenShift
-oc new-project va-scanner
-helm install va-scanner ./src/va-scanner -f my-values.yaml -n va-scanner
-
-# Watch the deployment progress
-oc get pods -n va-scanner -w
-```
-
-**Method 2: From Packaged Tar File**
-```bash
-# Kubernetes / EKS
-helm install va-scanner ./releases/va-scanner-1.0.0.tgz -f my-values.yaml -n va-scanner --create-namespace
-
-# Watch the deployment progress
-kubectl get pods -n va-scanner -w
-```
-
-```bash
-# OpenShift
-oc new-project va-scanner
-helm install va-scanner ./releases/va-scanner-1.0.0.tgz -f my-values.yaml -n va-scanner
-
-# Watch the deployment progress
-oc get pods -n va-scanner -w
-```
-
-**Method 3: Direct from GitHub Release URL**
-```bash
-# Kubernetes / EKS
 helm install va-scanner \
   https://github.com/IBM/guardium-helm/releases/download/v1.0.0/va-scanner-1.0.0.tgz \
   -f my-values.yaml \
   -n va-scanner \
   --create-namespace
 
-# Watch the deployment progress
 kubectl get pods -n va-scanner -w
 ```
 
+**Option 2: Downloaded chart package**
 ```bash
-# OpenShift
-oc new-project va-scanner
-helm install va-scanner \
-  https://github.com/IBM/guardium-helm/releases/download/v1.0.0/va-scanner-1.0.0.tgz \
-  -f my-values.yaml \
-  -n va-scanner
+curl -LO https://github.com/IBM/guardium-helm/releases/download/v1.0.0/va-scanner-1.0.0.tgz
+helm install va-scanner ./va-scanner-1.0.0.tgz -f my-values.yaml -n va-scanner --create-namespace
 
-# Watch the deployment progress
-oc get pods -n va-scanner -w
+kubectl get pods -n va-scanner -w
 ```
 
-**Note:** For Kubernetes / EKS, `--create-namespace` is typically used on first install. For OpenShift, create the project first with `oc new-project`, then use `helm install`. Use `helm upgrade` later for updates.
+**Option 3: Cloned repository**
+```bash
+cd guardium-helm
+helm install va-scanner ./src/va-scanner -f my-values.yaml -n va-scanner --create-namespace
+
+kubectl get pods -n va-scanner -w
+```
+
+**Update later**
+```bash
+helm upgrade va-scanner ./src/va-scanner -f my-values.yaml -n va-scanner
+```
 
 **Expected Output:**
 ```
@@ -660,19 +552,115 @@ Using this certificate file for keystore: [ /var/vascanner/certs/vascanner.pem ]
 **🎉 Congratulations!** Your VA Scanner is now deployed and automatically running security assessments on your databases!
 
 ---
-## OpenShift Security Notes
+### Path B: OpenShift
 
-The chart now supports both standard Kubernetes/EKS-style security settings and OpenShift-compatible settings.
+Use this path if you are deploying on Red Hat OpenShift.
 
-- On **Kubernetes / EKS**, it is common to use fixed values such as `runAsUser` and `fsGroup`.
-- On **OpenShift**, Security Context Constraints (SCC) often enforce namespace-assigned UIDs and stricter runtime controls.
-- For OpenShift deployments, prefer:
-  - `platform.type: openshift`
-  - `openshift.enabled: true`
-  - `podSecurityContext: {}`
-  - OpenShift-specific container security settings under `openshift.securityContext`
+#### OpenShift Values File
 
-If your OpenShift cluster blocks the pod with SCC-related errors, review the service account permissions and cluster security policy before changing the chart defaults.
+For OpenShift, start from the OpenShift example file:
+
+```bash
+cd src/va-scanner
+cp my-values-openshift-example.yaml my-values.yaml
+```
+
+Required OpenShift-specific settings:
+- `platform.type: openshift`
+- `openshift.enabled: true`
+- `podSecurityContext: {}`
+- `openshift.securityContext.allowPrivilegeEscalation: false`
+- `openshift.securityContext.capabilities.drop: [ALL]`
+- `openshift.securityContext.seccompProfile.type: RuntimeDefault`
+
+#### OpenShift Install Commands
+
+**From cloned repository**
+```bash
+oc new-project va-scanner
+helm install va-scanner ./src/va-scanner -f my-values.yaml -n va-scanner
+oc get pods -n va-scanner -w
+```
+
+**From packaged tar file**
+### Path B: OpenShift
+
+Use this path only for **Red Hat OpenShift**.
+
+#### OpenShift Values File
+
+For **OpenShift**, use the **OpenShift example file**, not the EKS file.
+
+```bash
+cd src/va-scanner
+cp my-values-openshift-example.yaml my-values.yaml
+```
+
+Use this file:
+- `my-values-openshift-example.yaml`
+
+Do not use:
+- `my-values-eks-example.yaml`
+
+#### OpenShift Settings
+
+For OpenShift, keep these settings:
+- `platform.type: openshift`
+- `openshift.enabled: true`
+- `podSecurityContext: {}`
+- `openshift.securityContext.allowPrivilegeEscalation: false`
+- `openshift.securityContext.capabilities.drop: [ALL]`
+- `openshift.securityContext.seccompProfile.type: RuntimeDefault`
+
+#### OpenShift Install Commands
+
+For **OpenShift**:
+- create the project first
+- then run `helm install`
+- later use `helm upgrade` for changes
+
+Choose one chart source:
+
+**Option 1: Direct GitHub release URL**
+```bash
+oc new-project va-scanner
+helm install va-scanner \
+  https://github.com/IBM/guardium-helm/releases/download/v1.0.0/va-scanner-1.0.0.tgz \
+  -f my-values.yaml \
+  -n va-scanner
+
+oc get pods -n va-scanner -w
+```
+
+**Option 2: Downloaded chart package**
+```bash
+oc new-project va-scanner
+curl -LO https://github.com/IBM/guardium-helm/releases/download/v1.0.0/va-scanner-1.0.0.tgz
+helm install va-scanner ./va-scanner-1.0.0.tgz -f my-values.yaml -n va-scanner
+
+oc get pods -n va-scanner -w
+```
+
+**Option 3: Cloned repository**
+```bash
+cd guardium-helm
+oc new-project va-scanner
+helm install va-scanner ./src/va-scanner -f my-values.yaml -n va-scanner
+
+oc get pods -n va-scanner -w
+```
+
+**Update later**
+```bash
+helm upgrade va-scanner ./src/va-scanner -f my-values.yaml -n va-scanner
+```
+
+#### OpenShift Security Notes
+
+- OpenShift uses Security Context Constraints (SCC), so Kubernetes-style fixed UID/GID settings often need to be removed or overridden.
+- Use `my-values-openshift-example.yaml` as the starting point for OCP.
+- Do not copy the EKS example into OpenShift.
+- If your cluster still blocks the pod with SCC-related errors, review the service account permissions and cluster security policy before changing chart defaults.
 
 ---
 
@@ -1041,6 +1029,7 @@ kubectl top nodes
 ### Additional Resources
 
 - [Guardium Data Protection Documentation](https://www.ibm.com/docs/en/guardium)
+- [IBM Docs: Deploy and configure Vulnerability Assessment Scanner](https://www.ibm.com/docs/en/gdp/12.x?topic=environments-deploy-configure-vulnerability-assessment-scanner)
 - [Kubernetes Documentation](https://kubernetes.io/docs/)
 - [Helm Documentation](https://helm.sh/docs/)
 - [AWS EKS Documentation](https://docs.aws.amazon.com/eks/)
