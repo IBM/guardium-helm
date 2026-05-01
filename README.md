@@ -1029,6 +1029,7 @@ kubectl top nodes
 ### Additional Resources
 
 - [Guardium Data Protection Documentation](https://www.ibm.com/docs/en/guardium)
+- [IBM Docs: Deploy and configure Vulnerability Assessment Scanner](https://www.ibm.com/docs/en/gdp/12.x?topic=environments-deploy-configure-vulnerability-assessment-scanner)
 - [Kubernetes Documentation](https://kubernetes.io/docs/)
 - [Helm Documentation](https://helm.sh/docs/)
 - [AWS EKS Documentation](https://docs.aws.amazon.com/eks/)
