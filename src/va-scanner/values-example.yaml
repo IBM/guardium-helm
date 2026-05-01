@@ -24,7 +24,7 @@ gdp:
   # ⚠️ CRITICAL: Must match the hostname in your SSL certificate
   #
   # STEP 1: Check your certificate hostname by running this command:
-  #   openssl s_client -connect YOUR_GDP_HOST:8443 -showcerts </dev/null 2>/dev/null | openssl x509 -noout -text | grep -A2 "Subject Alternative Name"
+  #   openssl s_client -connect YOUR-GDP-HOST:8443 -showcerts </dev/null 2>/dev/null | openssl x509 -noout -text | grep -A2 "Subject Alternative Name"
   #
   # Example output:
   #   X509v3 Subject Alternative Name:
