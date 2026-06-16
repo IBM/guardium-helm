@@ -150,6 +150,12 @@ spec:
         - name: VA_SCANNER_POLL_IN_MINS
           value: {{ .Values.vaScannerPollInMins | quote }}
         {{- end }}
+        # Keystore configuration - enables VA Scanner to create PKCS12 keystore from mounted PEM certificate
+        # This ensures proper SSL/TLS validation for any certificate authority (public or enterprise CA)
+        - name: GUARDIUM_KEYSTORE_PATH
+          value: "/var/vascanner/vascanner_keystore.p12"
+        - name: GUARDIUM_KEYSTORE_TYPE
+          value: "PKCS12"
         volumeMounts:
         - name: {{ .Values.volumes.cert.name }}
           mountPath: {{ .Values.volumes.cert.mountPath }}
