@@ -816,6 +816,88 @@ hostAliases:
       - "guard.yourcompany.com"
 ```
 
+### Issue: PKIX Certificate Path Building Failed (Enterprise CA Certificates)
+
+**Symptoms:**
+```
+PKIX path building failed: sun.security.provider.certpath.SunCertPathBuilderException:
+unable to find valid certification path to requested target
+VA Scanner App could not connect to Guardium server
+```
+
+**Root Cause:**
+Your GDP server uses an **enterprise CA certificate** (such as Internal CA, corporate CA, or self-signed certificate) that is not in the Java default truststore. The VA Scanner's Java application cannot validate the certificate chain.
+
+**Common Examples:**
+-  Internal CA certificates
+- Corporate/Enterprise CA certificates
+- Self-signed certificates
+- Private CA certificates
+
+**How to Identify:**
+Check your certificate issuer:
+```bash
+openssl s_client -connect YOUR_GDP_HOST:8443 -showcerts </dev/null 2>/dev/null | openssl x509 -noout -issuer
+
+# Examples of enterprise CAs:
+# issuer=C=US, O=International Business Machines Corporation, CN= INTERNAL INTERMEDIATE CA
+# issuer=C=US, O=YourCompany, CN=YourCompany Root CA
+# issuer=CN=Self-Signed Certificate
+```
+
+---
+
+### **Solution: Automatic (Chart v1.1.1+)**
+
+**✅ Upgrade to chart version 1.1.1 or later** to get automatic enterprise CA certificate support.
+
+**If you're using an older chart version:**
+```bash
+# Upgrade to the latest chart version
+helm repo update
+helm upgrade va-scanner guardium-helm/va-scanner --version 1.1.1 \
+  --namespace va-scanner \
+  -f my-values.yaml
+```
+
+**What the chart does automatically:**
+1. ✅ Mounts your PEM certificate at `/var/vascanner/certs/vascanner.pem`
+2. ✅ Sets environment variables to tell the VA Scanner to use PKCS12 keystore
+3. ✅ VA Scanner application automatically:
+   - Reads the PEM certificate
+   - Creates a PKCS12 keystore (`.p12` file) at runtime
+   - Imports the full certificate chain (including Internal Root CA)
+   - Uses this keystore for SSL/TLS validation
+
+**You do NOT need to:**
+- ❌ Manually create a `.p12` file
+- ❌ Convert certificates yourself
+- ❌ Configure keystore properties
+- ❌ Access the pod to make changes
+
+**Verification:**
+After deployment, check the logs to confirm automatic keystore creation:
+```bash
+kubectl logs -n va-scanner -l app.kubernetes.io/name=va-scanner --tail=50 | grep -i keystore
+
+# ✅ Expected successful output:
+# Using this certificate file for keystore: [ /var/vascanner/certs/vascanner.pem ]
+# DEBUG VAScannerLogger:155 - VAScanner keystore password is created successfully.
+# DEBUG VAScannerLogger:155 - VAScanner keystore is created successfully.
+# DEBUG VAScannerLogger:155 - VAScanner encrypts keystore password successfully.
+# DEBUG VAScannerLogger:155 - VAScanner stores encoded keystore password successfully.
+```
+
+Then verify the scanner connects successfully:
+```bash
+kubectl logs -n va-scanner -l app.kubernetes.io/name=va-scanner --tail=100 | grep -i "connecting\|success"
+
+# ✅ Expected output:
+# INFO  VAScannerLogger:147 - VA Scanner App connecting to Guardium server at URI : https://your-gdp-host:8443
+# DEBUG VAScannerLogger:155 - VAScanner decrypts keystore password successfully.
+# INFO  VAScannerLogger:147 - VA Scanner App status: Success.
+```
+
 ---
 
 ### Issue: Helm Installation Failed - Namespace Already Exists
