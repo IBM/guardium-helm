@@ -155,7 +155,7 @@ spec:
           mountPath: {{ .Values.volumes.cert.mountPath }}
           readOnly: {{ .Values.volumes.cert.readOnly }}
         - name: guardagent-config
-          mountPath: /var/vascanner/etc/guardAgent_static.properties
+          mountPath: /var/vascanner/conf/guardAgent.properties
           subPath: guardAgent.properties
         {{- if .Values.openshift.enabled }}
         {{- with .Values.openshift.securityContext }}
