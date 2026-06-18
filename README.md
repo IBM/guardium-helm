@@ -477,7 +477,7 @@ Choose one chart source:
 **Option 1: Direct GitHub release URL**
 ```bash
 helm install va-scanner \
-  https://github.com//guardium-helm/releases/download/v1.0.0/va-scanner-1.0.0.tgz \
+  https://github.com/IBM/guardium-helm/releases/download/v1.0.0/va-scanner-1.0.0.tgz \
   -f my-values.yaml \
   -n va-scanner \
   --create-namespace
@@ -487,7 +487,7 @@ kubectl get pods -n va-scanner -w
 
 **Option 2: Downloaded chart package**
 ```bash
-curl -LO https://github.com//guardium-helm/releases/download/v1.0.0/va-scanner-1.0.0.tgz
+curl -LO https://github.com/IBM/guardium-helm/releases/download/v1.0.0/va-scanner-1.0.0.tgz
 helm install va-scanner ./va-scanner-1.0.0.tgz -f my-values.yaml -n va-scanner --create-namespace
 
 kubectl get pods -n va-scanner -w
@@ -625,7 +625,7 @@ Choose one chart source:
 ```bash
 oc new-project va-scanner
 helm install va-scanner \
-  https://github.com//guardium-helm/releases/download/v1.0.0/va-scanner-1.0.0.tgz \
+  https://github.com/IBM/guardium-helm/releases/download/v1.0.0/va-scanner-1.0.0.tgz \
   -f my-values.yaml \
   -n va-scanner
 
@@ -635,7 +635,7 @@ oc get pods -n va-scanner -w
 **Option 2: Downloaded chart package**
 ```bash
 oc new-project va-scanner
-curl -LO https://github.com//guardium-helm/releases/download/v1.0.0/va-scanner-1.0.0.tgz
+curl -LO https://github.com/IBM/guardium-helm/releases/download/v1.0.0/va-scanner-1.0.0.tgz
 helm install va-scanner ./va-scanner-1.0.0.tgz -f my-values.yaml -n va-scanner
 
 oc get pods -n va-scanner -w
@@ -674,7 +674,7 @@ Before starting, ensure you have:
 - ✅ Kubernetes 1.19+ or compatible OpenShift version
 - ✅ Helm 3.0+
 - ✅ `kubectl` configured for Kubernetes/EKS, or `oc` configured for OpenShift
-- ✅  Artifactory credentials (for scanner image)
+- ✅ IBM Artifactory credentials (for scanner image)
 - ✅ Sufficient cluster permissions (deployments, secrets, service accounts, namespaces/projects, etc.)
 
 ## Common Operations
@@ -829,7 +829,7 @@ VA Scanner App could not connect to Guardium server
 Your GDP server uses an **enterprise CA certificate** (such as Internal CA, corporate CA, or self-signed certificate) that is not in the Java default truststore. The VA Scanner's Java application cannot validate the certificate chain.
 
 **Common Examples:**
-- Internal CA certificates
+-  Internal CA certificates
 - Corporate/Enterprise CA certificates
 - Self-signed certificates
 - Private CA certificates
@@ -849,7 +849,7 @@ openssl s_client -connect YOUR_GDP_HOST:8443 -showcerts </dev/null 2>/dev/null |
 
 ### **Solution: Automatic (Chart v1.1.1+)**
 
-** No action required!** The Helm chart automatically handles  Internal CA certificates.
+**✅ No action required!** The Helm chart automatically handles  Internal CA certificates.
 
 **What you need to provide (same as before):**
 ```yaml
@@ -859,14 +859,19 @@ gdp:
 ```
 
 **What the chart does automatically:**
-1. Mounts your PEM certificate at `/var/vascanner/certs/vascanner.pem`
-2. Sets environment variables to tell the VA Scanner to use PKCS12 keystore
-3. VA Scanner application automatically:
+1. ✅ Mounts your PEM certificate at `/var/vascanner/certs/vascanner.pem`
+2. ✅ Sets environment variables to tell the VA Scanner to use PKCS12 keystore
+3. ✅ VA Scanner application automatically:
    - Reads the PEM certificate
    - Creates a PKCS12 keystore (`.p12` file) at runtime
    - Imports the full certificate chain (including Internal Root CA)
    - Uses this keystore for SSL/TLS validation
 
+**You do NOT need to:**
+- ❌ Manually create a `.p12` file
+- ❌ Convert certificates yourself
+- ❌ Configure keystore properties
+- ❌ Access the pod to make changes
 
 **Verification:**
 After deployment, check the logs to confirm automatic keystore creation:
@@ -890,6 +895,35 @@ kubectl logs -n va-scanner -l app.kubernetes.io/name=va-scanner --tail=100 | gre
 # DEBUG VAScannerLogger:155 - VAScanner decrypts keystore password successfully.
 # INFO  VAScannerLogger:147 - VA Scanner App status: Success.
 ```
+
+---
+
+### **For Older Chart Versions (< v1.1.1)**
+
+If you're using an older version, you need to manually configure the keystore properties inside the pod:
+
+1. **Exec into the pod:**
+```bash
+kubectl exec -it -n va-scanner deployment/va-scanner -- /bin/bash
+```
+
+2. **Edit the configuration file:**
+```bash
+vi /var/vascanner/conf/guardAgent.properties
+```
+
+3. **Add these two lines:**
+```properties
+guardium.keystore.path=/var/vascanner/vascanner_keystore.p12
+guardium.keystore.type=PKCS12
+```
+
+4. **Restart the pod:**
+```bash
+kubectl rollout restart deployment/va-scanner -n va-scanner
+```
+
+**⚠️ Warning:** Manual changes are lost on pod restart in older versions. **Upgrade to v1.1.1+ for persistent configuration.**
 
 ---
 
@@ -967,14 +1001,14 @@ va-scanner-6bffc45f54-s5h2c   1/1     Running   0          10m
 
 1. **Check image pull secrets:**
 ```bash
-kubectl get secret -entitlement-key -n va-scanner
+kubectl get secret ibm-entitlement-key -n va-scanner
 kubectl describe pod -n va-scanner -l app=va-scanner
 ```
 
 2. **Verify registry credentials:**
 ```bash
 # Check if secret exists and has correct data
-kubectl get secret -entitlement-key -n va-scanner -o yaml
+kubectl get secret ibm-entitlement-key -n va-scanner -o yaml
 ```
 
 3. **Check events:**
@@ -1014,7 +1048,7 @@ kubectl get secret va-cert -n va-scanner -o jsonpath='{.data.ca\.crt}' | base64 
 4. **Check network connectivity:**
 - Ensure GDP server port 8443 is open
 - Verify security groups (AWS) or firewall rules allow traffic
-- Confirm GDP is not behind -only network restrictions
+- Confirm GDP is not behind IBM-only network restrictions
 
 ### Issue: Assessments Not Running
 
@@ -1076,8 +1110,8 @@ kubectl top nodes
 | `gdp.apiKey` | GDP API key (base64 encoded) | `your-base64-api-key` |
 | `gdp.agentName` | Unique VA agent identifier | `my-va-scanner` |
 | `gdp.certBase64` | GDP certificate (base64 encoded) | `LS0tLS1CRUdJTi...` |
-| `registry.username` |  Artifactory username | `your-email@company.com` |
-| `registry.password` |  Artifactory token | `your-token` |
+| `registry.username` | IBM Artifactory username | `your-email@company.com` |
+| `registry.password` | IBM Artifactory token | `your-token` |
 | `registry.email` | Registry email | `your-email@company.com` |
 
 ### Optional Values
