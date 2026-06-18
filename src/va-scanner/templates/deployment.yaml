@@ -154,6 +154,9 @@ spec:
         - name: {{ .Values.volumes.cert.name }}
           mountPath: {{ .Values.volumes.cert.mountPath }}
           readOnly: {{ .Values.volumes.cert.readOnly }}
+        - name: guardagent-config
+          mountPath: /var/vascanner/etc/guardAgent_static.properties
+          subPath: guardAgent.properties
         {{- if .Values.openshift.enabled }}
         {{- with .Values.openshift.securityContext }}
         securityContext:
@@ -186,6 +189,10 @@ spec:
           items:
           - key: ca.crt
             path: vascanner.pem
+      - name: guardagent-config
+        configMap:
+          name: {{ include "va-scanner.fullname" . }}-config
+          defaultMode: 0644
       {{- with .Values.nodeSelector }}
       nodeSelector:
         {{- toYaml . | nindent 8 }}
