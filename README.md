@@ -849,13 +849,15 @@ openssl s_client -connect YOUR_GDP_HOST:8443 -showcerts </dev/null 2>/dev/null |
 
 ### **Solution: Automatic (Chart v1.1.1+)**
 
-**✅ No action required!** The Helm chart automatically handles  Internal CA certificates.
+**✅ Upgrade to chart version 1.1.1 or later** to get automatic enterprise CA certificate support.
 
-**What you need to provide (same as before):**
-```yaml
-gdp:
-  # Just provide the certificate in PEM format (base64 encoded)
-  certBase64: "LS0tLS1CRUdJTi..."  # Your certificate from openssl command
+**If you're using an older chart version:**
+```bash
+# Upgrade to the latest chart version
+helm repo update
+helm upgrade va-scanner guardium-helm/va-scanner --version 1.1.1 \
+  --namespace va-scanner \
+  -f my-values.yaml
 ```
 
 **What the chart does automatically:**
