@@ -898,37 +898,6 @@ kubectl logs -n va-scanner -l app.kubernetes.io/name=va-scanner --tail=100 | gre
 
 ---
 
-### **For Older Chart Versions (< v1.1.1)**
-
-If you're using an older version, you need to manually configure the keystore properties inside the pod:
-
-1. **Exec into the pod:**
-```bash
-kubectl exec -it -n va-scanner deployment/va-scanner -- /bin/bash
-```
-
-2. **Edit the configuration file:**
-```bash
-vi /var/vascanner/conf/guardAgent.properties
-```
-
-3. **Add these two lines:**
-```properties
-guardium.keystore.path=/var/vascanner/vascanner_keystore.p12
-guardium.keystore.type=PKCS12
-```
-
-4. **Restart the pod:**
-```bash
-kubectl rollout restart deployment/va-scanner -n va-scanner
-```
-
-**⚠️ Warning:** Manual changes are lost on pod restart in older versions. **Upgrade to v1.1.1+ for persistent configuration.**
-
----
-
----
-
 ### Issue: Helm Installation Failed - Namespace Already Exists
 
 **Symptoms:**
