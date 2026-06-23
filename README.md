@@ -77,16 +77,17 @@ This Helm chart deploys the Guardium Vulnerability Assessment (VA) Scanner on Ku
                     └──────────────────────────────┘
 ```
 
+
 ### Component Roles
 
 | Component | Purpose | Setup Phase |
 |-----------|---------|-------------|
 | **GDP Server** | Central management server for security assessments | Step 1 |
-| **Database (RDS)** | Target database to be assessed for vulnerabilities | Step 2 |
-| **Kubernetes / EKS / OCP Cluster** | Container platform hosting the VA Scanner | Step 3 |
-| **VA Scanner (Helm)** | Automated scanner pods that execute assessments | Step 6 |
-| **GDP Data Source** | Configuration linking GDP to your database | Step 4 |
-| **GDP Assessment** | Security test definitions and schedules | Step 5 |
+| **Database** | Target database to be assessed for vulnerabilities | Step 2 |
+| **GDP Data Source** | Configuration linking GDP to your database | Step 3 |
+| **GDP Assessment** | Security test definitions and schedules | Step 4 |
+| **VA Scanner (Helm)** | Automated scanner pods that execute assessments | Step 5 |
+| **Kubernetes / OpenShift Cluster** | Container platform hosting the VA Scanner | Prerequisites |
 
 ### How It Works
 
