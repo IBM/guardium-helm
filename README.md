@@ -1,6 +1,6 @@
 # Guardium VA Scanner Helm Chart
 
-Production-ready Helm chart for deploying Guardium Vulnerability Assessment Scanner on Kubernetes and OpenShift.
+Helm chart for deploying Guardium Vulnerability Assessment Scanner on Kubernetes and OpenShift.
 
 ## Table of Contents
 
