@@ -35,38 +35,38 @@ This Helm chart deploys the Guardium Vulnerability Assessment (VA) Scanner on Ku
 ### High-Level Architecture
 
 ```
-
-┌───────────────────────────────────────────────────────────────────────┐
-│                     Cloud or On-Premises Environment                  │
-│                                                                       │
-│  ┌────────────────────┐         ┌─────────────────────────────────┐   │
-│  │   Database         │         │   Kubernetes / OpenShift        │   │
-│  │  ┌──────────────┐  │         │  ┌───────────────────────────┐  │   │
-│  │  │   Oracle DB  │  │         │  │      va-scanner           │  │   │
-│  │  │   MySQL DB   │◄─┼─────────┼──┤   (Helm Deployment)       │  │   │
-│  │  │ PostgreSQL   │  │         │  │                           │  │   │
-│  │  │     etc.     │  │         │  │  • Pods (2-10 replicas)   │  │   │
-│  │  └──────────────┘  │         │  │  • Auto-scaling (HPA)     │  │   │
-│  └────────────────────┘         │  │  • Secrets Management     │  │   │
-│           ▲                     │  └───────────────────────────┘  │   │
-│           │                     │              │                  │   │
-│           │                     └──────────────┼──────────────────┘   │
-│           │                                    │                      │
-│           │                                    │ HTTPS:8443           │
-│           │                                    ▼                      │
-│           │                      ┌─────────────────────────────────┐  │
-│           │                      │    GDP Server (VM/Container)    │  │
-│           │                      │  ┌───────────────────────────┐  │  │
-│           └──────────────────────┼──┤  Guardium Data Protection │  │  │
-│                Assessment        │  │                           │  │  │
-│                 Results          │  │  • Assessment Builder     │  │  │
-│                                  │  │  • Data Sources Config    │  │  │
-│                                  │  │  • Security Tests         │  │  │
-│                                  │  │  • API Key Management     │  │  │
-│                                  │  └───────────────────────────┘  │  │
-│                                  └─────────────────────────────────┘  │
-│                                                                       │
-└───────────────────────────────────────────────────────────────────────┘
+┌─────────────────────────────────────────────────────────────────────────┐
+│                     Cloud or On-Premises Environment                    │
+│                                                                         │
+│  ┌────────────────────┐          ┌─────────────────────────────────┐    │
+│  │   Database         │          │   Kubernetes / OpenShift        │    │
+│  │  ┌──────────────┐  │          │  ┌───────────────────────────┐  │    │
+│  │  │   Oracle DB  │  │          │  │      va-scanner           │  │    │
+│  │  │   MySQL DB   │◄─┼──────────┼──┤   (Helm Deployment)       │  │    │
+│  │  │ PostgreSQL   │  │  Assess  │  │                           │  │    │
+│  │  │     etc.     │  │          │  │  • Pods (2-10 replicas)   │  │    │
+│  │  └──────────────┘  │          │  │  • Auto-scaling (HPA)     │  │    │
+│  └────────────────────┘          │  │  • Secrets Management     │  │    │
+│           │                      │  └───────────────────────────┘  │    │
+│           │                      │              │                  │    │
+│           │ Results              └──────────────┼──────────────────┘    │
+│           │                                     │                       │
+│           │                                     │ HTTPS:8443            │
+│           ▼                                     ▼                       │
+│           │                       ┌─────────────────────────────────┐   │
+│           │                       │    GDP Server (VM/Container)    │   │
+│           │                       │  ┌───────────────────────────┐  │   │
+│           └──────────────────────►│  │  Guardium Data Protection │  │   │
+│                                   │  │                           │  │   │
+│                                   │  │  • Assessment Builder     │  │   │
+│                                   │  │  • Data Sources Config    │  │   │
+│                                   │  │  • Security Tests         │  │   │
+│                                   │  │  • API Key Management     │  │   │
+│                                   │  │  • Results & Reports      │  │   │
+│                                   │  └───────────────────────────┘  │   │
+│                                   └─────────────────────────────────┘   │
+│                                                                         │
+└─────────────────────────────────────────────────────────────────────────┘
 
                     ┌──────────────────────────────┐
                     │   Your Local Machine         │
@@ -82,11 +82,11 @@ This Helm chart deploys the Guardium Vulnerability Assessment (VA) Scanner on Ku
 | Component | Purpose | Setup Phase |
 |-----------|---------|-------------|
 | **GDP Server** | Central management server for security assessments | Step 1 |
-| **Database** | Target database to be assessed for vulnerabilities | Step 2 |
-| **Kubernetes / OpenShift Cluster** | Container platform hosting the VA Scanner | Prerequisites |
-| **GDP Data Source** | Configuration linking GDP to your database | Step 3 |
-| **GDP Assessment** | Security test definitions and schedules | Step 4 |
-| **VA Scanner (Helm)** | Automated scanner pods that execute assessments | Step 5 |
+| **Database (RDS)** | Target database to be assessed for vulnerabilities | Step 2 |
+| **Kubernetes / EKS / OCP Cluster** | Container platform hosting the VA Scanner | Step 3 |
+| **VA Scanner (Helm)** | Automated scanner pods that execute assessments | Step 6 |
+| **GDP Data Source** | Configuration linking GDP to your database | Step 4 |
+| **GDP Assessment** | Security test definitions and schedules | Step 5 |
 
 ### How It Works
 
@@ -97,7 +97,6 @@ This Helm chart deploys the Guardium Vulnerability Assessment (VA) Scanner on Ku
 5. **Results** are sent back to GDP for analysis and reporting
 6. **Helm** automates the deployment, scaling, and management of scanner pods
 
-> **Note:** While Helm deployment (Step 5) is the final step, it's the key automation piece that enables continuous, scalable vulnerability assessments across your database infrastructure.
 
 ---
 
