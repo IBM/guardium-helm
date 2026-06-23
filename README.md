@@ -1,20 +1,46 @@
 # Guardium VA Scanner Helm Chart
 
-Production-ready Helm chart for deploying Guardium Vulnerability Assessment Scanner on Kubernetes, Amazon EKS, and OpenShift.
+Production-ready Helm chart for deploying Guardium Vulnerability Assessment Scanner on Kubernetes and OpenShift.
 
+## Table of Contents
+
+- [Overview](#overview)
+- [Architecture](#architecture)
+- [Prerequisites](#prerequisites)
+- [Complete Setup Guide](#complete-setup-guide)
+  - [Step 1: Deploy GDP Server](#step-1-deploy-gdp-server-)
+  - [Step 2: Create Database](#step-2-create-database-on-cloud-or-on-prem-environment-)
+  - [Step 3: Configure Data Source in GDP](#step-3-configure-data-source-in-gdp-)
+  - [Step 4: Create Security Assessment in GDP](#step-4-create-security-assessment-in-gdp-)
+  - [Step 5: Deploy VA Scanner with Helm](#step-5-deploy-va-scanner-with-helm-)
+- [Platform-Specific Deployment](#platform-specific-deployment)
+  - [Kubernetes (Vanilla, EKS, GKE, AKS)](#kubernetes-vanilla-eks-gke-aks)
+  - [OpenShift](#openshift)
+- [Common Operations](#common-operations)
+- [Advanced Configuration](#advanced-configuration)
+- [Troubleshooting](#troubleshooting)
+- [Configuration Reference](#configuration-reference)
+- [Support and Documentation](#support-and-documentation)
 
 ## Overview
 
-This Helm chart deploys the Guardium Vulnerability Assessment (VA) Scanner on Kubernetes, Amazon EKS, and OpenShift. The scanner connects to your Guardium Data Protection (GDP) server to perform security assessments on your databases.
+This Helm chart deploys the Guardium Vulnerability Assessment (VA) Scanner on Kubernetes and OpenShift platforms. The scanner connects to your Guardium Data Protection (GDP) server to perform automated security assessments on your databases.
 
-## Architecture Overview
+**Supported Platforms:**
+- Vanilla Kubernetes  ( EKS , Azure , and IBM Clooud)
+- Red Hat OpenShift
+
+## Architecture
+
+### High-Level Architecture
 
 ```
-┌─────────────────────────────────────────────────────────────────────────┐
-│                          AWS Cloud Environment                           │
-│                                                                          │
+
+┌───────────────────────────────────────────────────────────────────────┐
+│                     Cloud or On-Premises Environment                  │
+│                                                                       │
 │  ┌────────────────────┐         ┌─────────────────────────────────┐   │
-│  │   Amazon RDS       │         │      Amazon EKS Cluster          │   │
+│  │   Database         │         │   Kubernetes / OpenShift        │   │
 │  │  ┌──────────────┐  │         │  ┌───────────────────────────┐  │   │
 │  │  │   Oracle DB  │  │         │  │      va-scanner           │  │   │
 │  │  │   MySQL DB   │◄─┼─────────┼──┤   (Helm Deployment)       │  │   │
@@ -22,25 +48,25 @@ This Helm chart deploys the Guardium Vulnerability Assessment (VA) Scanner on Ku
 │  │  │     etc.     │  │         │  │  • Pods (2-10 replicas)   │  │   │
 │  │  └──────────────┘  │         │  │  • Auto-scaling (HPA)     │  │   │
 │  └────────────────────┘         │  │  • Secrets Management     │  │   │
-│           ▲                      │  └───────────────────────────┘  │   │
-│           │                      │              │                   │   │
-│           │                      └──────────────┼───────────────────┘   │
-│           │                                     │                       │
-│           │                                     │ HTTPS:8443            │
-│           │                                     ▼                       │
-│           │                      ┌─────────────────────────────────┐   │
-│           │                      │    GDP Server (EC2/VM)          │   │
-│           │                      │  ┌───────────────────────────┐  │   │
-│           └──────────────────────┼──┤  Guardium Data Protection │  │   │
-│                Assessment         │  │                           │  │   │
-│                 Results           │  │  • Assessment Builder     │  │   │
-│                                   │  │  • Data Sources Config    │  │   │
-│                                   │  │  • Security Tests         │  │   │
-│                                   │  │  • API Key Management     │  │   │
-│                                   │  └───────────────────────────┘  │   │
-│                                   └─────────────────────────────────┘   │
-│                                                                          │
-└─────────────────────────────────────────────────────────────────────────┘
+│           ▲                     │  └───────────────────────────┘  │   │
+│           │                     │              │                  │   │
+│           │                     └──────────────┼──────────────────┘   │
+│           │                                    │                      │
+│           │                                    │ HTTPS:8443           │
+│           │                                    ▼                      │
+│           │                      ┌─────────────────────────────────┐  │
+│           │                      │    GDP Server (VM/Container)    │  │
+│           │                      │  ┌───────────────────────────┐  │  │
+│           └──────────────────────┼──┤  Guardium Data Protection │  │  │
+│                Assessment        │  │                           │  │  │
+│                 Results          │  │  • Assessment Builder     │  │  │
+│                                  │  │  • Data Sources Config    │  │  │
+│                                  │  │  • Security Tests         │  │  │
+│                                  │  │  • API Key Management     │  │  │
+│                                  │  └───────────────────────────┘  │  │
+│                                  └─────────────────────────────────┘  │
+│                                                                       │
+└───────────────────────────────────────────────────────────────────────┘
 
                     ┌──────────────────────────────┐
                     │   Your Local Machine         │
@@ -56,11 +82,11 @@ This Helm chart deploys the Guardium Vulnerability Assessment (VA) Scanner on Ku
 | Component | Purpose | Setup Phase |
 |-----------|---------|-------------|
 | **GDP Server** | Central management server for security assessments | Step 1 |
-| **Database (RDS)** | Target database to be assessed for vulnerabilities | Step 2 |
-| **Kubernetes / EKS / OCP Cluster** | Container platform hosting the VA Scanner | Step 3 |
-| **VA Scanner (Helm)** | Automated scanner pods that execute assessments | Step 6 |
-| **GDP Data Source** | Configuration linking GDP to your database | Step 4 |
-| **GDP Assessment** | Security test definitions and schedules | Step 5 |
+| **Database** | Target database to be assessed for vulnerabilities | Step 2 |
+| **Kubernetes / OpenShift Cluster** | Container platform hosting the VA Scanner | Prerequisites |
+| **GDP Data Source** | Configuration linking GDP to your database | Step 3 |
+| **GDP Assessment** | Security test definitions and schedules | Step 4 |
+| **VA Scanner (Helm)** | Automated scanner pods that execute assessments | Step 5 |
 
 ### How It Works
 
@@ -71,23 +97,48 @@ This Helm chart deploys the Guardium Vulnerability Assessment (VA) Scanner on Ku
 5. **Results** are sent back to GDP for analysis and reporting
 6. **Helm** automates the deployment, scaling, and management of scanner pods
 
-> **Note:** While Helm deployment (Step 6) is the final step, it's the key automation piece that enables continuous, scalable vulnerability assessments across your database infrastructure.
+> **Note:** While Helm deployment (Step 5) is the final step, it's the key automation piece that enables continuous, scalable vulnerability assessments across your database infrastructure.
+
+---
+
+## Prerequisites
+
+### Common Requirements (All Platforms)
+
+- ✅ GDP server deployed and accessible (port 8443 open)
+- ✅ Database instance created (cloud or on-premises)
+- ✅ Helm 3.0+
+- ✅ IBM Entitlement Key (for scanner image from cp.icr.io)
+- ✅ Sufficient cluster permissions (deployments, secrets, service accounts, namespaces/projects)
+
+### Platform-Specific Requirements
+
+#### Kubernetes (Vanilla, EKS)
+- ✅ Kubernetes 1.19+
+- ✅ `kubectl` configured with cluster access
+- ✅ Permissions to create namespaces, deployments, secrets, service accounts, HPA
+
+#### OpenShift
+- ✅ OpenShift 4.x
+- ✅ `oc` CLI configured with cluster access
+- ✅ Permissions to create projects and resources
+- ✅ Understanding of Security Context Constraints (SCC)
 
 ---
 
 ## Complete Setup Guide
 
-Follow these steps in order to successfully deploy and configure the VA Scanner:
+Follow these steps in order to successfully deploy and configure the VA Scanner.
 
 ---
 
 ### Step 1: Deploy GDP Server 🖥️
 
-**Critical requirement:**
-- The GDP Central Manager must be reachable from the cluster where the scanner runs.
-- Port `8443` must be open from your **EKS / Kubernetes** cluster or your **OpenShift** cluster to the GDP Central Manager.
-- Users must be able to log in to the GDP Central Manager and have CLI access to generate the API key used by the scanner.
-- The user you log in with must be able to run `grdapi` successfully on that GDP system.
+**Critical requirements:**
+- The GDP Central Manager must be reachable from the cluster where the scanner runs
+- Port `8443` must be open from your cluster to the GDP Central Manager
+- You must have CLI access to generate the API key used by the scanner
+- The user must be able to run `grdapi` successfully on the GDP system
 
 **Recommended approach:**
 - Deploy GDP in any environment where your scanner cluster can reach it over `https://<gdp-host>:8443`
@@ -97,7 +148,9 @@ Follow these steps in order to successfully deploy and configure the VA Scanner:
   ssh user@your-gdp-server
   grdapi create_api_key name=vascanner
   ```
-- Warning: the SSH user must be a GDP CLI user with access to `grdapi`. If that user cannot run `grdapi`, they cannot generate the API key required by this chart.
+
+**Warning:** The SSH user must be a GDP CLI user with access to `grdapi`. If that user cannot run `grdapi`, they cannot generate the API key required by this chart.
+
 ---
 
 ### Step 2: Create Database on Cloud or On-Prem Environment 🗄️
@@ -126,57 +179,11 @@ Create a database instance that will be assessed for vulnerabilities.
 
 ---
 
-### Step 3: Prepare Your Cluster Access ☸️
-
-This step is platform-specific. Follow only one path.
-
-#### If you are using EKS / Kubernetes
-
-Prepare `kubectl` access and verify you can deploy into the target namespace.
-
-**Typical EKS example**
-```bash
-eksctl create cluster \
-  --name va-scanner-cluster \
-  --region us-east-1 \
-  --nodegroup-name standard-workers \
-  --node-type t3.medium \
-  --nodes 3 \
-  --nodes-min 2 \
-  --nodes-max 4 \
-  --managed
-
-aws eks update-kubeconfig --region us-east-1 --name va-scanner-cluster
-kubectl get nodes
-kubectl config current-context
-kubectl cluster-info
-kubectl auth can-i create deployments -n va-scanner
-kubectl auth can-i create secrets -n va-scanner
-kubectl auth can-i create serviceaccounts -n va-scanner
-kubectl auth can-i create hpa -n va-scanner
-```
-
-#### If you are using OpenShift
-
-Prepare `oc` access and verify you can create or use a project.
-
-```bash
-oc login --server=https://api.example.openshift.cluster:6443 --token=<your-token>
-oc whoami
-oc new-project va-scanner
-oc project va-scanner
-oc auth can-i create deployments -n va-scanner
-oc auth can-i create secrets -n va-scanner
-oc auth can-i create serviceaccounts -n va-scanner
-```
-
----
-
-### Step 4: Configure Data Source in GDP 🔗
+### Step 3: Configure Data Source in GDP 🔗
 
 Connect your database to the GDP system so it can be assessed for vulnerabilities.
 
-#### 4.1 Access GDP Console
+#### 3.1 Access GDP Console
 
 Open your browser and navigate to:
 ```
@@ -184,7 +191,7 @@ https://your-gdp-server:8443
 ```
 Login with your GDP administrator credentials.
 
-#### 4.2 Add Data Source
+#### 3.2 Add Data Source
 
 Follow these steps in the GDP console:
 
@@ -220,32 +227,32 @@ Follow these steps in the GDP console:
 
 ---
 
-### Step 5: Create Security Assessment in GDP 🔍
+### Step 4: Create Security Assessment in GDP 🔍
 
 Configure the vulnerability assessment tests that will run on your database.
 
-#### 5.1 Navigate to Assessment Builder
+#### 4.1 Navigate to Assessment Builder
 
 1. Log into GDP console
 2. Navigate to **Assessment Builder** section
 
-#### 5.2 Create New Assessment
+#### 4.2 Create New Assessment
 
 1. **Click** the **➕ Plus** button to create a new assessment
 2. **Enter** a descriptive name (e.g., "Oracle Production DB Assessment")
 3. **Click** **Create**
 
-#### 5.3 Add Data Source to Assessment
+#### 4.3 Add Data Source to Assessment
 
 1. In the assessment configuration page, **click** **➕ Add Data Source**
-2. **Select** the data source you created in Step 4
+2. **Select** the data source you created in Step 3
 3. **Click** **Save**
 
 ![Security Assessment Builder](docs/images/deploy_to_cloud_yaml_data_source_select.png)
 
 ![Data Source Selection](docs/images/deploy_to_cloud_yaml_add_data_source.png)
 
-#### 5.4 Configure Security Tests
+#### 4.4 Configure Security Tests
 
 1. **Click** **Configure Test** button
 2. **Navigate** to the **Config** tab
@@ -262,7 +269,7 @@ Configure the vulnerability assessment tests that will run on your database.
 
 ![Configure Security Tests](docs/images/deploy_to_cloud_yaml_security_tests.png)
 
-#### 5.5 Run Assessment (Test)
+#### 4.5 Run Assessment (Test)
 
 Before deploying the scanner, test the assessment manually:
 
@@ -271,49 +278,78 @@ Before deploying the scanner, test the assessment manually:
 3. The assessment will execute immediately
 4. **View results** in the **Assessment Results** section
 
-**✅ Success Indicator:** You should see test results appearing in the results section, indicating the assessment is properly configured.
+** Success Indicator:** You should see test results appearing in the results section, indicating the assessment is properly configured.
 
 ---
 
-### Step 6: Deploy VA Scanner with Helm 🚀
+### Step 5: Deploy VA Scanner with Helm 🚀
 
-**This is the final step!** Deploy the VA Scanner to your Kubernetes, EKS, or OpenShift cluster to automate continuous vulnerability assessments.
+**This is the final step!** Deploy the VA Scanner to your Kubernetes or OpenShift cluster to automate continuous vulnerability assessments.
 
-## Installation Guide
-
-Start here by choosing your platform.
-
-### Platform Decision
-
-- If you deploy on **Amazon EKS** or another **standard Kubernetes** cluster, follow **Path A: EKS / Kubernetes**
-- If you deploy on **Red Hat OpenShift**, follow **Path B: OpenShift**
-
-Do not mix the two paths:
-- use the matching example values file
-- use the matching namespace/project command flow
-- use the matching security settings
-
-### Quick Start File Mapping
-
-| Platform | Copy this file | Namespace creation | Install pattern |
-|----------|----------------|-------------------|-----------------|
-| **EKS / Kubernetes** | `cp my-values-eks-example.yaml my-values.yaml` | Helm creates namespace | `helm install ... --create-namespace` |
-| **OpenShift** | `cp my-values-openshift-example.yaml my-values.yaml` | Create project first with `oc new-project` | `helm install ... -n <project>` |
-
-### Chart Source Options
-
-After choosing your platform path below, you can install using any of these chart sources:
-- **Direct GitHub release URL** for the simplest production install
-- **Downloaded `.tgz` package** for offline or controlled installs
-- **Cloned repository** for development and customization
+Choose your platform below:
+- [Kubernetes (Vanilla, EKS, GKE, AKS)](#kubernetes-vanilla-eks-gke-aks)
+- [OpenShift](#openshift)
 
 ---
 
-### Path A: EKS / Kubernetes
+## Platform-Specific Deployment
 
-Use this path if you are deploying on standard Kubernetes or Amazon EKS.
+### Kubernetes (Vanilla, EKS, AKS)
 
-#### 6.1 Gather Required Credentials
+Use this section for any standard Kubernetes distribution, including Amazon EKS Azure AKS, or vanilla Kubernetes.
+
+#### 5.1 Prepare Cluster Access
+
+Ensure you have `kubectl` access to your cluster:
+
+```bash
+# Verify cluster access
+kubectl cluster-info
+kubectl get nodes
+
+# Verify permissions
+kubectl auth can-i create deployments -n va-scanner
+kubectl auth can-i create secrets -n va-scanner
+kubectl auth can-i create serviceaccounts -n va-scanner
+kubectl auth can-i create hpa -n va-scanner
+```
+
+#### 5.1.1 Optional: Create EKS Cluster
+
+**This subsection is OPTIONAL** - only follow if you need to create a new EKS cluster. Skip if you already have a Kubernetes cluster.
+
+<details>
+<summary>Click to expand EKS cluster creation commands</summary>
+
+```bash
+# Install eksctl if not already installed
+# macOS: brew install eksctl
+# Linux: https://github.com/weaveworks/eksctl
+
+# Create EKS cluster
+eksctl create cluster \
+  --name va-scanner-cluster \
+  --region us-east-1 \
+  --nodegroup-name standard-workers \
+  --node-type t3.medium \
+  --nodes 3 \
+  --nodes-min 2 \
+  --nodes-max 4 \
+  --managed
+
+# Configure kubectl
+aws eks update-kubeconfig --region us-east-1 --name va-scanner-cluster
+
+# Verify cluster
+kubectl get nodes
+kubectl config current-context
+```
+
+**Note:** This creates a new EKS cluster. Adjust parameters based on your requirements. For GKE or AKS, use their respective CLI tools (`gcloud` or `az`).
+
+</details>
+
+#### 5.2 Gather Required Credentials
 
 **GDP API Key:**
 ```bash
@@ -324,7 +360,7 @@ ssh user@your-gdp-server
 grdapi
 
 # Create API key for the scanner
-grdapi create_api_key name=vascannereks
+grdapi create_api_key name=vascanner
 
 # Copy and save the "Encoded API key" from the output
 ```
@@ -370,41 +406,33 @@ Get your IBM Entitlement Key for pulling the scanner image:
 # Save the key - you'll need it for registry.password
 ```
 
-#### 6.2 Prepare Helm Values File
+#### 5.3 Prepare Helm Values File
 
-For **EKS / Kubernetes**, use the **EKS example file**, not the OpenShift file.
+For **Kubernetes** (including EKS, GKE, AKS), use the **EKS example file**:
 
 ```bash
 # Navigate to the Helm chart directory
 cd src/va-scanner
 
-# Copy the EKS example file
+# Copy the Kubernetes/EKS example file
 cp my-values-eks-example.yaml my-values.yaml
 ```
 
-Use this file:
-- `my-values-eks-example.yaml`
+**Use this file:**
+- `my-values-eks-example.yaml` (works for all Kubernetes distributions)
 
-Do not use:
-- `my-values-openshift-example.yaml`
+**Do not use:**
+- `my-values-openshift-example.yaml` (OpenShift only)
 
-#### 6.3 Configure Your Values
+#### 5.4 Configure Your Values
 
-Edit `my-values.yaml` with your specific configuration.
-
-**GDP access requirements:**
-- You must be able to log in to the **Guardium Data Protection Central Manager**.
-- You need a user with **CLI access** on the GDP system.
-- You must be able to SSH to the GDP system with that user, for example: `ssh user@your-gdp-server`
-- That user must be able to run `grdapi` successfully after login.
-- That user must have enough permission to run `grdapi create_api_key`.
-- The API key used by this chart is created from GDP CLI access, not from the Helm chart itself.
+Edit `my-values.yaml` with your specific configuration:
 
 ```yaml
 # Namespace Configuration
 namespace:
   create: false  # Set to false if using --create-namespace flag
-  name: va-scanner6
+  name: va-scanner
 
 # GDP Server Configuration
 gdp:
@@ -413,9 +441,9 @@ gdp:
   #   openssl s_client -connect YOUR_GDP_HOST:8443 -showcerts </dev/null 2>/dev/null | openssl x509 -noout -text | grep -A2 "Subject Alternative Name"
   # STEP 2: Use the DNS name from certificate output
   host: "guard.yourcompany.com"                      # TODO: Replace with YOUR certificate DNS name
-  apiKey: "your-base64-encoded-api-key"              # TODO: From step 6.1
-  agentName: "eks-va-scanner-01"                     # Unique identifier for this scanner
-  certBase64: "your-base64-encoded-certificate"      # TODO: From step 6.1
+  apiKey: "your-base64-encoded-api-key"              # TODO: From step 5.2
+  agentName: "k8s-va-scanner-01"                     # Unique identifier for this scanner
+  certBase64: "your-base64-encoded-certificate"      # TODO: From step 5.2
 
 # IBM Container Registry Credentials (for cp.icr.io)
 registry:
@@ -432,7 +460,7 @@ image:
 
 # Platform Configuration
 platform:
-  type: kubernetes  # EKS / standard Kubernetes
+  type: kubernetes  # Use 'kubernetes' for all K8s distributions (vanilla, EKS, GKE, AKS)
 
 # Deployment Configuration
 replicaCount: 3  # Number of scanner pods (if HPA is disabled)
@@ -456,21 +484,16 @@ autoscaling:
 #       - "guard.yourcompany.com"     # TODO: Must match gdp.host above
 hostAliases: []  # Default: empty (assumes certificate hostname matches)
 
-# Standard Kubernetes / EKS security settings
+# Standard Kubernetes security settings
 podSecurityContext:
   fsGroup: 10001
 
-# OpenShift settings are not used in the EKS path
+# OpenShift settings are not used in Kubernetes
 openshift:
   enabled: false
 ```
 
-#### 6.4 Deploy with Helm
-
-For **EKS / Kubernetes**:
-- start from `my-values-eks-example.yaml`
-- keep `platform.type: kubernetes`
-- use `helm install ... --create-namespace` on first install
+#### 5.5 Deploy with Helm
 
 Choose one chart source:
 
@@ -501,7 +524,7 @@ helm install va-scanner ./src/va-scanner -f my-values.yaml -n va-scanner --creat
 kubectl get pods -n va-scanner -w
 ```
 
-**Update later**
+**Update later:**
 ```bash
 helm upgrade va-scanner ./src/va-scanner -f my-values.yaml -n va-scanner
 ```
@@ -514,7 +537,7 @@ va-scanner-5d8f7b9c4d-def34   1/1     Running   0          30s
 va-scanner-5d8f7b9c4d-ghi56   1/1     Running   0          30s
 ```
 
-#### 6.5 Verify Successful Deployment
+#### 5.6 Verify Successful Deployment
 
 **Check all resources:**
 ```bash
@@ -552,78 +575,86 @@ Using this certificate file for keystore: [ /var/vascanner/certs/vascanner.pem ]
 **🎉 Congratulations!** Your VA Scanner is now deployed and automatically running security assessments on your databases!
 
 ---
-### Path B: OpenShift
 
-Use this path if you are deploying on Red Hat OpenShift.
+### OpenShift
 
-#### OpenShift Values File
+Use this section only for **Red Hat OpenShift** deployments.
 
-For OpenShift, start from the OpenShift example file:
+#### 5.1 Prepare OpenShift Access
+
+Ensure you have `oc` access to your OpenShift cluster:
+
+```bash
+# Login to OpenShift
+oc login --server=https://api.example.openshift.cluster:6443 --token=<your-token>
+
+# Verify access
+oc whoami
+oc version
+
+# Verify permissions
+oc auth can-i create deployments -n va-scanner
+oc auth can-i create secrets -n va-scanner
+oc auth can-i create serviceaccounts -n va-scanner
+```
+
+#### 5.2 Gather Required Credentials
+
+Follow the same credential gathering steps as Kubernetes section (5.2):
+- GDP API Key
+- GDP Certificate
+- IBM Entitlement Key
+
+#### 5.3 Prepare Helm Values File
+
+For **OpenShift**, use the **OpenShift example file**:
 
 ```bash
 cd src/va-scanner
 cp my-values-openshift-example.yaml my-values.yaml
 ```
 
-Required OpenShift-specific settings:
-- `platform.type: openshift`
-- `openshift.enabled: true`
-- `podSecurityContext: {}`
-- `openshift.securityContext.allowPrivilegeEscalation: false`
-- `openshift.securityContext.capabilities.drop: [ALL]`
-- `openshift.securityContext.seccompProfile.type: RuntimeDefault`
-
-#### OpenShift Install Commands
-
-**From cloned repository**
-```bash
-oc new-project va-scanner
-helm install va-scanner ./src/va-scanner -f my-values.yaml -n va-scanner
-oc get pods -n va-scanner -w
-```
-
-**From packaged tar file**
-### Path B: OpenShift
-
-Use this path only for **Red Hat OpenShift**.
-
-#### OpenShift Values File
-
-For **OpenShift**, use the **OpenShift example file**, not the EKS file.
-
-```bash
-cd src/va-scanner
-cp my-values-openshift-example.yaml my-values.yaml
-```
-
-Use this file:
+**Use this file:**
 - `my-values-openshift-example.yaml`
 
-Do not use:
+**Do not use:**
 - `my-values-eks-example.yaml`
 
-#### OpenShift Settings
+#### 5.4 Configure OpenShift-Specific Settings
 
-For OpenShift, keep these settings:
-- `platform.type: openshift`
-- `openshift.enabled: true`
-- `podSecurityContext: {}`
-- `openshift.securityContext.allowPrivilegeEscalation: false`
-- `openshift.securityContext.capabilities.drop: [ALL]`
-- `openshift.securityContext.seccompProfile.type: RuntimeDefault`
+Edit `my-values.yaml` and ensure these OpenShift-specific settings are present:
 
-#### OpenShift Install Commands
+```yaml
+# Platform Configuration
+platform:
+  type: openshift  # Must be 'openshift' for OCP
 
-For **OpenShift**:
-- create the project first
-- then run `helm install`
-- later use `helm upgrade` for changes
+# OpenShift Security Context Constraints
+openshift:
+  enabled: true
+  securityContext:
+    allowPrivilegeEscalation: false
+    capabilities:
+      drop:
+        - ALL
+    seccompProfile:
+      type: RuntimeDefault
+
+# Empty podSecurityContext for OpenShift (SCC handles this)
+podSecurityContext: {}
+```
+
+#### 5.5 Deploy with Helm
+
+**Create project first:**
+```bash
+oc new-project va-scanner
+```
 
 Choose one chart source:
 
 **Option 1: Direct GitHub release URL**
 ```bash
-oc new-project va-scanner
 helm install va-scanner \
   https://github.com/IBM/guardium-helm/releases/download/v1.0.0/va-scanner-1.0.0.tgz \
   -f my-values.yaml \
@@ -634,7 +665,6 @@ oc get pods -n va-scanner -w
 
 **Option 2: Downloaded chart package**
 ```bash
-oc new-project va-scanner
 curl -LO https://github.com/IBM/guardium-helm/releases/download/v1.0.0/va-scanner-1.0.0.tgz
 helm install va-scanner ./va-scanner-1.0.0.tgz -f my-values.yaml -n va-scanner
 
@@ -644,38 +674,36 @@ oc get pods -n va-scanner -w
 **Option 3: Cloned repository**
 ```bash
 cd guardium-helm
-oc new-project va-scanner
 helm install va-scanner ./src/va-scanner -f my-values.yaml -n va-scanner
 
 oc get pods -n va-scanner -w
 ```
 
-**Update later**
+**Update later:**
 ```bash
 helm upgrade va-scanner ./src/va-scanner -f my-values.yaml -n va-scanner
 ```
 
-#### OpenShift Security Notes
+#### 5.6 OpenShift Security Notes
 
-- OpenShift uses Security Context Constraints (SCC), so Kubernetes-style fixed UID/GID settings often need to be removed or overridden.
-- Use `my-values-openshift-example.yaml` as the starting point for OCP.
-- Do not copy the EKS example into OpenShift.
-- If your cluster still blocks the pod with SCC-related errors, review the service account permissions and cluster security policy before changing chart defaults.
+- OpenShift uses Security Context Constraints (SCC), so Kubernetes-style fixed UID/GID settings are removed
+- Use `my-values-openshift-example.yaml` as the starting point for OCP
+- Do not copy the EKS/Kubernetes example into OpenShift
+- If your cluster still blocks the pod with SCC-related errors, review the service account permissions and cluster security policy
+
+#### 5.7 Verify Successful Deployment
+
+Use the same verification steps as Kubernetes (section 5.6), but use `oc` instead of `kubectl`:
+
+```bash
+# Check all resources
+oc get all -n va-scanner
+
+# Check scanner logs
+oc logs -n va-scanner -l app=va-scanner --tail=100 -f
+```
 
 ---
-
-## Prerequisites Summary
-
-Before starting, ensure you have:
-
-- ✅ Cloud or on-prem environment with permissions to create Kubernetes, EKS, or OpenShift resources
-- ✅ GDP server deployed and accessible (port 8443 open)
-- ✅ Database instance created (RDS or other)
-- ✅ Kubernetes 1.19+ or compatible OpenShift version
-- ✅ Helm 3.0+
-- ✅ `kubectl` configured for Kubernetes/EKS, or `oc` configured for OpenShift
-- ✅ IBM Artifactory credentials (for scanner image)
-- ✅ Sufficient cluster permissions (deployments, secrets, service accounts, namespaces/projects, etc.)
 
 ## Common Operations
 
@@ -683,7 +711,7 @@ Before starting, ensure you have:
 
 ```bash
 # Update your values file, then upgrade
-helm upgrade va-scanner . -f my-values.yaml
+helm upgrade va-scanner ./src/va-scanner -f my-values.yaml -n va-scanner
 
 # Watch the rollout
 kubectl rollout status deployment/va-scanner -n va-scanner
@@ -693,20 +721,20 @@ kubectl rollout status deployment/va-scanner -n va-scanner
 
 ```bash
 # List revisions
-helm history va-scanner
+helm history va-scanner -n va-scanner
 
 # Rollback to previous version
-helm rollback va-scanner
+helm rollback va-scanner -n va-scanner
 
 # Rollback to specific revision
-helm rollback va-scanner 2
+helm rollback va-scanner 2 -n va-scanner
 ```
 
 ### Scale Deployment
 
 ```bash
 # Disable HPA first if enabled
-helm upgrade va-scanner . -f my-values.yaml --set autoscaling.enabled=false
+helm upgrade va-scanner ./src/va-scanner -f my-values.yaml -n va-scanner --set autoscaling.enabled=false
 
 # Scale deployment manually
 kubectl scale deployment va-scanner -n va-scanner --replicas=5
@@ -716,11 +744,15 @@ kubectl scale deployment va-scanner -n va-scanner --replicas=5
 
 ```bash
 # Remove the deployment
-helm uninstall va-scanner
+helm uninstall va-scanner -n va-scanner
 
 # Optionally delete the namespace
 kubectl delete namespace va-scanner
+# Or for OpenShift:
+oc delete project va-scanner
 ```
+
+---
 
 ## Advanced Configuration
 
@@ -760,6 +792,8 @@ affinity:
           values:
           - scanner
 ```
+
+---
 
 ## Troubleshooting
 
@@ -816,6 +850,8 @@ hostAliases:
       - "guard.yourcompany.com"
 ```
 
+---
+
 ### Issue: PKIX Certificate Path Building Failed (Enterprise CA Certificates)
 
 **Symptoms:**
@@ -826,10 +862,10 @@ VA Scanner App could not connect to Guardium server
 ```
 
 **Root Cause:**
-Your GDP server uses an **enterprise CA certificate** (such as Internal CA, corporate CA, or self-signed certificate) that is not in the Java default truststore. The VA Scanner's Java application cannot validate the certificate chain.
+Your GDP server uses an **enterprise CA certificate** (such as IBM Internal CA, corporate CA, or self-signed certificate) that is not in the Java default truststore. The VA Scanner's Java application cannot validate the certificate chain.
 
 **Common Examples:**
--  Internal CA certificates
+- IBM Internal CA certificates
 - Corporate/Enterprise CA certificates
 - Self-signed certificates
 - Private CA certificates
@@ -840,7 +876,7 @@ Check your certificate issuer:
 openssl s_client -connect YOUR_GDP_HOST:8443 -showcerts </dev/null 2>/dev/null | openssl x509 -noout -issuer
 
 # Examples of enterprise CAs:
-# issuer=C=US, O=International Business Machines Corporation, CN= INTERNAL INTERMEDIATE CA
+# issuer=C=US, O=International Business Machines Corporation, CN=IBM INTERNAL INTERMEDIATE CA
 # issuer=C=US, O=YourCompany, CN=YourCompany Root CA
 # issuer=CN=Self-Signed Certificate
 ```
@@ -866,7 +902,7 @@ helm upgrade va-scanner guardium-helm/va-scanner --version 1.1.1 \
 3. ✅ VA Scanner application automatically:
    - Reads the PEM certificate
    - Creates a PKCS12 keystore (`.p12` file) at runtime
-   - Imports the full certificate chain (including Internal Root CA)
+   - Imports the full certificate chain (including IBM Internal Root CA)
    - Uses this keystore for SSL/TLS validation
 
 **You do NOT need to:**
@@ -908,19 +944,19 @@ Error: INSTALLATION FAILED: Namespace "va-scanner" exists and cannot be imported
 ```
 
 **Solution:**
-If you created the namespace manually in Step 3 before running Helm, either:
+If you created the namespace manually before running Helm, either:
 
 **Option 1: Delete and let Helm create it**
 ```bash
 kubectl delete namespace va-scanner
-helm install va-scanner . -f my-values.yaml
+helm install va-scanner ./src/va-scanner -f my-values.yaml -n va-scanner --create-namespace
 ```
 
 **Option 2: Skip namespace creation in Helm**
 ```bash
 # Edit your my-values.yaml file
 # Set: namespace.create: false
-helm install va-scanner . -f my-values.yaml
+helm install va-scanner ./src/va-scanner -f my-values.yaml -n va-scanner
 ```
 
 ---
@@ -987,6 +1023,8 @@ kubectl get secret ibm-entitlement-key -n va-scanner -o yaml
 kubectl get events -n va-scanner --sort-by='.lastTimestamp' | grep -i pull
 ```
 
+---
+
 ### Issue: Scanner Cannot Connect to GDP
 
 **Symptoms:**
@@ -1021,6 +1059,8 @@ kubectl get secret va-cert -n va-scanner -o jsonpath='{.data.ca\.crt}' | base64 
 - Verify security groups (AWS) or firewall rules allow traffic
 - Confirm GDP is not behind IBM-only network restrictions
 
+---
+
 ### Issue: Assessments Not Running
 
 **Symptoms:**
@@ -1043,6 +1083,8 @@ kubectl logs -n va-scanner -l app=va-scanner --tail=200 -f
    - Test connection in GDP console
    - Check database credentials
    - Ensure database is accessible from GDP server
+
+---
 
 ### View Detailed Logs
 
@@ -1070,6 +1112,8 @@ kubectl describe hpa -n va-scanner
 kubectl top nodes
 ```
 
+---
+
 ## Configuration Reference
 
 ### Required Values
@@ -1081,9 +1125,9 @@ kubectl top nodes
 | `gdp.apiKey` | GDP API key (base64 encoded) | `your-base64-api-key` |
 | `gdp.agentName` | Unique VA agent identifier | `my-va-scanner` |
 | `gdp.certBase64` | GDP certificate (base64 encoded) | `LS0tLS1CRUdJTi...` |
-| `registry.username` | IBM Artifactory username | `your-email@company.com` |
-| `registry.password` | IBM Artifactory token | `your-token` |
-| `registry.email` | Registry email | `your-email@company.com` |
+| `registry.username` | IBM Entitlement username | `cp` |
+| `registry.password` | IBM Entitlement key | `your-entitlement-key` |
+| `registry.email` | Registry email | `cp` |
 
 ### Optional Values
 
@@ -1091,9 +1135,9 @@ kubectl top nodes
 |-----------|-------------|---------|
 | `vaScannerPollInMins` | **IMPORTANT:** Polling interval in minutes. Prevents CrashLoopBackOff when no jobs available. Set to 0 to disable. | `10` |
 | `namespace.create` | Create namespace | `true` |
-| `registry.server` | Registry server URL | `docker-na-public.artifactory.swg-devops.com` |
-| `image.repository` | Scanner image repository | `docker-na-public.artifactory.swg-devops.com/sec-guardium-next-gen-docker-local/va-scanner` |
-| `image.tag` | Scanner image tag | `vascanner_trunk-b823b06-15936-20251125_0327` |
+| `registry.server` | Registry server URL | `cp.icr.io` |
+| `image.repository` | Scanner image repository | `cp.icr.io/cp/ibm-guardium-data-security-center/guardium/vascanner-12.2.0/va-scanner` |
+| `image.tag` | Scanner image tag | `vascanner-v12.2.0` |
 | `image.pullPolicy` | Image pull policy | `IfNotPresent` |
 | `replicaCount` | Number of replicas (if HPA disabled) | `3` |
 | `autoscaling.enabled` | Enable Horizontal Pod Autoscaler | `true` |
@@ -1105,6 +1149,10 @@ kubectl top nodes
 | `resources.requests.memory` | Memory request | `512Mi` |
 | `resources.limits.cpu` | CPU limit | `1000m` |
 | `resources.limits.memory` | Memory limit | `2Gi` |
+| `platform.type` | Platform type (`kubernetes` or `openshift`) | `kubernetes` |
+| `openshift.enabled` | Enable OpenShift-specific settings | `false` |
+
+---
 
 ## Support and Documentation
 
@@ -1114,7 +1162,7 @@ kubectl top nodes
 - [IBM Docs: Deploy and configure Vulnerability Assessment Scanner](https://www.ibm.com/docs/en/gdp/12.x?topic=environments-deploy-configure-vulnerability-assessment-scanner)
 - [Kubernetes Documentation](https://kubernetes.io/docs/)
 - [Helm Documentation](https://helm.sh/docs/)
-- [AWS EKS Documentation](https://docs.aws.amazon.com/eks/)
+- [OpenShift Documentation](https://docs.openshift.com/)
 
 ### Getting Help
 
@@ -1125,3 +1173,8 @@ If you encounter issues:
 4. Ensure network connectivity between components
 5. Contact your Guardium administrator or IBM support
 
+---
+
+## License
+
+This project is licensed under the Apache License 2.0 - see the LICENSE file for details.
