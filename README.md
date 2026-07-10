@@ -2,6 +2,18 @@
 
 Production-ready Helm chart for deploying Guardium Vulnerability Assessment Scanner on Kubernetes, Amazon EKS, and OpenShift.
 
+## Deployment Use Cases
+
+| | Use Case 1 — Helm (this guide) | Use Case 2 — Docker Compose |
+|---|---|---|
+| **Platform** | Kubernetes / EKS / OpenShift | Plain VM or server |
+| **Scaling** | Auto-scaling (HPA, 2–10 replicas) | Manual (`--scale`) |
+| **Secrets** | Kubernetes Secrets | `.env` file |
+| **Best for** | Production, cloud-native | POC, on-prem VM, simple setups |
+
+> **Running on a plain VM without Kubernetes?** See the [Docker Compose guide](docker-compose/README.md).
+
+---
 
 ## Overview
 
@@ -9,47 +21,7 @@ This Helm chart deploys the Guardium Vulnerability Assessment (VA) Scanner on Ku
 
 ## Architecture Overview
 
-```
-┌─────────────────────────────────────────────────────────────────────────┐
-│                          AWS Cloud Environment                           │
-│                                                                          │
-│  ┌────────────────────┐         ┌─────────────────────────────────┐   │
-│  │   Amazon RDS       │         │      Amazon EKS Cluster          │   │
-│  │  ┌──────────────┐  │         │  ┌───────────────────────────┐  │   │
-│  │  │   Oracle DB  │  │         │  │      va-scanner           │  │   │
-│  │  │   MySQL DB   │◄─┼─────────┼──┤   (Helm Deployment)       │  │   │
-│  │  │ PostgreSQL   │  │         │  │                           │  │   │
-│  │  │     etc.     │  │         │  │  • Pods (2-10 replicas)   │  │   │
-│  │  └──────────────┘  │         │  │  • Auto-scaling (HPA)     │  │   │
-│  └────────────────────┘         │  │  • Secrets Management     │  │   │
-│           ▲                      │  └───────────────────────────┘  │   │
-│           │                      │              │                   │   │
-│           │                      └──────────────┼───────────────────┘   │
-│           │                                     │                       │
-│           │                                     │ HTTPS:8443            │
-│           │                                     ▼                       │
-│           │                      ┌─────────────────────────────────┐   │
-│           │                      │    GDP Server (EC2/VM)          │   │
-│           │                      │  ┌───────────────────────────┐  │   │
-│           └──────────────────────┼──┤  Guardium Data Protection │  │   │
-│                Assessment         │  │                           │  │   │
-│                 Results           │  │  • Assessment Builder     │  │   │
-│                                   │  │  • Data Sources Config    │  │   │
-│                                   │  │  • Security Tests         │  │   │
-│                                   │  │  • API Key Management     │  │   │
-│                                   │  └───────────────────────────┘  │   │
-│                                   └─────────────────────────────────┘   │
-│                                                                          │
-└─────────────────────────────────────────────────────────────────────────┘
-
-                    ┌──────────────────────────────┐
-                    │   Your Local Machine         │
-                    │                              │
-                    │  • kubectl / oc access       │
-                    │  • Helm CLI                  │
-                    │  • values.yaml config        │
-                    └──────────────────────────────┘
-```
+![Architecture Diagram](docs/images/diagram.png)
 
 ### Component Roles
 
@@ -128,25 +100,14 @@ Create a database instance that will be assessed for vulnerabilities.
 
 ### Step 3: Prepare Your Cluster Access ☸️
 
-This step is platform-specific. Follow only one path.
+This step is platform-specific. Follow only the path that matches your cluster.
 
-#### If you are using EKS / Kubernetes
+#### Path A — Kubernetes (EKS, AKS, or vanilla)
 
 Prepare `kubectl` access and verify you can deploy into the target namespace.
 
-**Typical EKS example**
 ```bash
-eksctl create cluster \
-  --name va-scanner-cluster \
-  --region us-east-1 \
-  --nodegroup-name standard-workers \
-  --node-type t3.medium \
-  --nodes 3 \
-  --nodes-min 2 \
-  --nodes-max 4 \
-  --managed
-
-aws eks update-kubeconfig --region us-east-1 --name va-scanner-cluster
+# Verify cluster access
 kubectl get nodes
 kubectl config current-context
 kubectl cluster-info
@@ -156,7 +117,22 @@ kubectl auth can-i create serviceaccounts -n va-scanner
 kubectl auth can-i create hpa -n va-scanner
 ```
 
-#### If you are using OpenShift
+> **If you need to create an EKS cluster first (optional — skip if your cluster already exists):**
+> ```bash
+> eksctl create cluster \
+>   --name va-scanner-cluster \
+>   --region us-east-1 \
+>   --nodegroup-name standard-workers \
+>   --node-type t3.medium \
+>   --nodes 3 \
+>   --nodes-min 2 \
+>   --nodes-max 4 \
+>   --managed
+>
+> aws eks update-kubeconfig --region us-east-1 --name va-scanner-cluster
+> ```
+
+#### Path B — OpenShift
 
 Prepare `oc` access and verify you can create or use a project.
 
@@ -552,37 +528,7 @@ Using this certificate file for keystore: [ /var/vascanner/certs/vascanner.pem ]
 **🎉 Congratulations!** Your VA Scanner is now deployed and automatically running security assessments on your databases!
 
 ---
-### Path B: OpenShift
 
-Use this path if you are deploying on Red Hat OpenShift.
-
-#### OpenShift Values File
-
-For OpenShift, start from the OpenShift example file:
-
-```bash
-cd src/va-scanner
-cp my-values-openshift-example.yaml my-values.yaml
-```
-
-Required OpenShift-specific settings:
-- `platform.type: openshift`
-- `openshift.enabled: true`
-- `podSecurityContext: {}`
-- `openshift.securityContext.allowPrivilegeEscalation: false`
-- `openshift.securityContext.capabilities.drop: [ALL]`
-- `openshift.securityContext.seccompProfile.type: RuntimeDefault`
-
-#### OpenShift Install Commands
-
-**From cloned repository**
-```bash
-oc new-project va-scanner
-helm install va-scanner ./src/va-scanner -f my-values.yaml -n va-scanner
-oc get pods -n va-scanner -w
-```
-
-**From packaged tar file**
 ### Path B: OpenShift
 
 Use this path only for **Red Hat OpenShift**.
