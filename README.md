@@ -246,31 +246,18 @@ Before deploying the scanner, test the assessment manually:
 
 ## Installation Guide
 
-Start here by choosing your platform.
+### ➤ Choose Your Platform
 
-### Platform Decision
+| | **Path A — Kubernetes** | **Path B — OpenShift** |
+|---|---|---|
+| **Cluster type** | EKS, AKS, GKE, vanilla K8s | Red Hat OpenShift (OCP) |
+| **CLI tool** | `kubectl` + `helm` | `oc` + `helm` |
+| **Namespace** | Created by Helm (`--create-namespace`) | Created first with `oc new-project` |
+| **Values file** | `my-values-eks-example.yaml` | `my-values-openshift-example.yaml` |
+| **Security context** | `podSecurityContext.fsGroup: 10001` | `podSecurityContext: {}` + SCC settings |
+| **Jump to** | [Path A ↓](#path-a-eks--kubernetes) | [Path B ↓](#path-b-openshift) |
 
-- If you deploy on **Amazon EKS** or another **standard Kubernetes** cluster, follow **Path A: EKS / Kubernetes**
-- If you deploy on **Red Hat OpenShift**, follow **Path B: OpenShift**
-
-Do not mix the two paths:
-- use the matching example values file
-- use the matching namespace/project command flow
-- use the matching security settings
-
-### Quick Start File Mapping
-
-| Platform | Copy this file | Namespace creation | Install pattern |
-|----------|----------------|-------------------|-----------------|
-| **EKS / Kubernetes** | `cp my-values-eks-example.yaml my-values.yaml` | Helm creates namespace | `helm install ... --create-namespace` |
-| **OpenShift** | `cp my-values-openshift-example.yaml my-values.yaml` | Create project first with `oc new-project` | `helm install ... -n <project>` |
-
-### Chart Source Options
-
-After choosing your platform path below, you can install using any of these chart sources:
-- **Direct GitHub release URL** for the simplest production install
-- **Downloaded `.tgz` package** for offline or controlled installs
-- **Cloned repository** for development and customization
+> **Not sure?** If you log in with `kubectl`, use Path A. If you log in with `oc`, use Path B.
 
 ---
 
