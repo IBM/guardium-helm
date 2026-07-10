@@ -122,20 +122,6 @@ kubectl auth can-i create serviceaccounts -n va-scanner
 kubectl auth can-i create hpa -n va-scanner
 ```
 
-> **If you need to create an EKS cluster first (optional — skip if your cluster already exists):**
-> ```bash
-> eksctl create cluster \
->   --name va-scanner-cluster \
->   --region us-east-1 \
->   --nodegroup-name standard-workers \
->   --node-type t3.medium \
->   --nodes 3 \
->   --nodes-min 2 \
->   --nodes-max 4 \
->   --managed
->
-> aws eks update-kubeconfig --region us-east-1 --name va-scanner-cluster
-> ```
 
 #### Path B — OpenShift
 
@@ -369,9 +355,9 @@ Use this file:
 Do not use:
 - `my-values-openshift-example.yaml`
 
-#### 6.3 Configure Your Values
+#### 6.3 Configure Your Values (EKS / Kubernetes)
 
-Edit `my-values.yaml` with your specific configuration.
+Edit `my-values.yaml` with your EKS / Kubernetes-specific configuration.
 
 **GDP access requirements:**
 - You must be able to log in to the **Guardium Data Protection Central Manager**.
@@ -553,24 +539,71 @@ Use this file:
 Do not use:
 - `my-values-eks-example.yaml`
 
-#### OpenShift Settings
+#### 6b.3 Configure Your Values (OpenShift)
 
-For OpenShift, keep these settings:
-- `platform.type: openshift`
-- `openshift.enabled: true`
-- `podSecurityContext: {}`
-- `openshift.securityContext.allowPrivilegeEscalation: false`
-- `openshift.securityContext.capabilities.drop: [ALL]`
-- `openshift.securityContext.seccompProfile.type: RuntimeDefault`
+Edit `my-values.yaml` with your OpenShift-specific configuration.
 
-#### OpenShift Install Commands
+```yaml
+# Namespace Configuration
+namespace:
+  create: false  # Project must be created first with: oc new-project va-scanner
+  name: va-scanner
 
-For **OpenShift**:
-- create the project first
-- then run `helm install`
-- later use `helm upgrade` for changes
+# GDP Server Configuration
+gdp:
+  # GDP Server hostname - MUST match the hostname in your SSL certificate
+  host: "guard.yourcompany.com"                      # TODO: Replace with YOUR certificate DNS name
+  apiKey: "your-base64-encoded-api-key"              # TODO: From step 6b.1
+  agentName: "ocp-va-scanner-01"                     # Unique identifier for this scanner
+  certBase64: "your-base64-encoded-certificate"      # TODO: From step 6b.1
 
-Choose one chart source:
+# IBM Container Registry Credentials (for cp.icr.io)
+registry:
+  username: "cp"                                      # Use 'cp' for IBM entitled software
+  password: "your-ibm-entitlement-key"               # TODO: From https://myibm.ibm.com/products-services/containerlibrary
+  email: "cp"
+  server: cp.icr.io
+
+# Scanner Container Image
+image:
+  repository: cp.icr.io/cp/ibm-guardium-data-security-center/guardium/vascanner-12.2.0/va-scanner
+  tag: "vascanner-v12.2.0"
+  pullPolicy: IfNotPresent
+
+# Platform Configuration — MUST be openshift for OCP
+platform:
+  type: openshift
+
+# Deployment Configuration
+replicaCount: 3
+vaScannerPollInMins: 10
+
+# Optional: Enable auto-scaling
+autoscaling:
+  enabled: true
+  minReplicas: 2
+  maxReplicas: 10
+
+# OpenShift: do NOT set fsGroup — OCP assigns UID dynamically via SCC
+podSecurityContext: {}
+
+# OpenShift security settings — required for SCC compliance
+openshift:
+  enabled: true
+  securityContext:
+    allowPrivilegeEscalation: false
+    capabilities:
+      drop: [ALL]
+    seccompProfile:
+      type: RuntimeDefault
+
+# Host Aliases — only needed if certificate hostname differs from actual hostname
+hostAliases: []
+```
+
+#### 6b.4 Deploy with Helm (OpenShift)
+
+For **OpenShift**, create the project first, then run `helm install`. Choose one chart source:
 
 **Option 1: Direct GitHub release URL**
 ```bash
