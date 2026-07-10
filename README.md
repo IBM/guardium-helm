@@ -2,17 +2,6 @@
 
 Production-ready Helm chart for deploying Guardium Vulnerability Assessment Scanner on Kubernetes, Amazon EKS, and OpenShift.
 
-## Deployment Use Cases
-
-| | Use Case 1 — Helm (this guide) | Use Case 2 — Docker Compose |
-|---|---|---|
-| **Platform** | Kubernetes / EKS / OpenShift | Plain VM or server |
-| **Scaling** | Auto-scaling (HPA, 2–10 replicas) | Manual (`--scale`) |
-| **Secrets** | Kubernetes Secrets | `.env` file |
-| **Best for** | Production, cloud-native | POC, on-prem VM, simple setups |
-
-> **Running on a plain VM without Kubernetes?** See the [Docker Compose guide](docker-compose/README.md).
-
 ---
 
 ## Overview
