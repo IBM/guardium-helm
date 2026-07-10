@@ -4,6 +4,22 @@ Production-ready Helm chart for deploying Guardium Vulnerability Assessment Scan
 
 ---
 
+## Quick Start
+
+Follow these 6 steps in order. Steps 1–5 are the same for all platforms. Step 6 splits by platform.
+
+| Step | What you do | Jump to |
+|------|-------------|---------|
+| **1** | Deploy GDP Server | [Step 1 ↓](#step-1-deploy-gdp-server-️) |
+| **2** | Create your target database | [Step 2 ↓](#step-2-create-database-on-cloud-or-on-prem-environment-️) |
+| **3** | Prepare cluster access | [Step 3 ↓](#step-3-prepare-your-cluster-access-️) |
+| **4** | Configure data source in GDP | [Step 4 ↓](#step-4-configure-data-source-in-gdp-) |
+| **5** | Create security assessment in GDP | [Step 5 ↓](#step-5-create-security-assessment-in-gdp-) |
+| **6a** | Deploy with Helm — **Kubernetes / EKS / AKS** | [Path A ↓](#path-a-eks--kubernetes) |
+| **6b** | Deploy with Helm — **OpenShift** | [Path B ↓](#path-b-openshift) |
+
+---
+
 ## Overview
 
 This Helm chart deploys the Guardium Vulnerability Assessment (VA) Scanner on Kubernetes, Amazon EKS, and OpenShift. The scanner connects to your Guardium Data Protection (GDP) server to perform security assessments on your databases.
