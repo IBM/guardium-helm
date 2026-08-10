@@ -122,20 +122,20 @@ spec:
               key: CLIENT_SECRET
               optional: true
         {{- end }}
-        {{- if .Values.gdp.httpProxyIp }}
-        - name: HTTP_PROXY_IP
+        {{- if .Values.gdp.httpsProxyIp }}
+        - name: HTTPS_PROXY_IP
           valueFrom:
             secretKeyRef:
               name: va-scanner-credentials
-              key: HTTP_PROXY_IP
+              key: HTTPS_PROXY_IP
               optional: true
         {{- end }}
-        {{- if .Values.gdp.httpProxyPort }}
-        - name: HTTP_PROXY_PORT
+        {{- if .Values.gdp.httpsProxyPort }}
+        - name: HTTPS_PROXY_PORT
           valueFrom:
             secretKeyRef:
               name: va-scanner-credentials
-              key: HTTP_PROXY_PORT
+              key: HTTPS_PROXY_PORT
               optional: true
         {{- end }}
         {{- if .Values.gdp.cloudResourceName }}

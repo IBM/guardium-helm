@@ -62,8 +62,8 @@ gdp:
   clientSecret: ''
   
   # Optional: Proxy configuration
-  httpProxyIp: ''
-  httpProxyPort: ''
+  httpsProxyIp: ''
+  httpsProxyPort: ''
   
   # Optional: Cloud resource name
   cloudResourceName: ''

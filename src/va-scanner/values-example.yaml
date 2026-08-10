@@ -62,8 +62,10 @@ gdp:
   clientSecret: ''
   
   # Optional: Proxy configuration
-  httpProxyIp: ''
-  httpProxyPort: ''
+  # IMPORTANT: Use HTTPS proxy settings as per IBM documentation
+  # Reference: https://www.ibm.com/docs/en/gdp/12.x?topic=containerization-setting-environment-variables
+  httpsProxyIp: ''
+  httpsProxyPort: ''
   
   # Optional: Cloud resource name
   cloudResourceName: ''
