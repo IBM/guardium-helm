@@ -45,8 +45,8 @@ gdp:
   clientId: ""
   clientPassword: ""
   clientSecret: ""
-  httpProxyIp: ""
-  httpProxyPort: ""
+  httpsProxyIp: ""
+  httpsProxyPort: ""
   cloudResourceName: ""
 
 serviceAccount:
