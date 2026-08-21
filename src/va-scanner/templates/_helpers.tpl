@@ -72,3 +72,13 @@ Namespace
 {{- .Release.Namespace }}
 {{- end }}
 {{- end }}
+
+{{/*
+License must be accepted by setting license to true.
+Returns "true" when accepted (used with | required to block install).
+*/}}
+{{- define "va-scanner.licenseValidate" -}}
+  {{- if contains "true" (.Values.license | toString | lower) -}}
+    true
+  {{- end -}}
+{{- end -}}

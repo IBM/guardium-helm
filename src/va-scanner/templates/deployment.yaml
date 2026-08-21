@@ -1,3 +1,4 @@
+{{- $_ := include "va-scanner.licenseValidate" . | required "License must be accepted. Set license=true after reading https://www.ibm.com/support/customer/csol/terms/?id=L-YCUQ-REB48T&lc=en" }}
 apiVersion: apps/v1
 kind: Deployment
 metadata:

@@ -4,6 +4,25 @@ Production-ready Helm chart for deploying Guardium Vulnerability Assessment Scan
 
 ---
 
+## License
+
+**You must read and accept the IBM license before installing this chart.**
+
+By installing this product you accept the license terms:
+https://www.ibm.com/support/customer/csol/terms/?id=L-YCUQ-REB48T&lc=en
+
+This covers **IBM Guardium Data Security Center Software 4.0 (5900-AQE)**, including IBM Guardium Vulnerability Assessment for Databases.
+
+To accept, set `license=true` in your values file or pass `--set license=true` on the command line.
+The chart **will refuse to install** if `license` is not set to `true`.
+
+```yaml
+# In your my-values.yaml
+license: true   # Set to true after reading https://www.ibm.com/support/customer/csol/terms/?id=L-YCUQ-REB48T&lc=en
+```
+
+---
+
 ## Quick Start
 
 Follow these 6 steps in order. Steps 1–5 are the same for all platforms. Step 6 splits by platform.
@@ -446,6 +465,7 @@ Choose one chart source:
 helm install va-scanner \
   https://github.com/IBM/guardium-helm/releases/download/v1.0.0/va-scanner-1.0.0.tgz \
   -f my-values.yaml \
+  --set license=true \
   -n va-scanner \
   --create-namespace
 
@@ -455,7 +475,7 @@ kubectl get pods -n va-scanner -w
 **Option 2: Downloaded chart package**
 ```bash
 curl -LO https://github.com/IBM/guardium-helm/releases/download/v1.0.0/va-scanner-1.0.0.tgz
-helm install va-scanner ./va-scanner-1.0.0.tgz -f my-values.yaml -n va-scanner --create-namespace
+helm install va-scanner ./va-scanner-1.0.0.tgz -f my-values.yaml --set license=true -n va-scanner --create-namespace
 
 kubectl get pods -n va-scanner -w
 ```
@@ -463,14 +483,14 @@ kubectl get pods -n va-scanner -w
 **Option 3: Cloned repository**
 ```bash
 cd guardium-helm
-helm install va-scanner ./src/va-scanner -f my-values.yaml -n va-scanner --create-namespace
+helm install va-scanner ./src/va-scanner -f my-values.yaml --set license=true -n va-scanner --create-namespace
 
 kubectl get pods -n va-scanner -w
 ```
 
 **Update later**
 ```bash
-helm upgrade va-scanner ./src/va-scanner -f my-values.yaml -n va-scanner
+helm upgrade va-scanner ./src/va-scanner -f my-values.yaml --set license=true -n va-scanner
 ```
 
 **Expected Output:**
@@ -611,6 +631,7 @@ oc new-project va-scanner
 helm install va-scanner \
   https://github.com/IBM/guardium-helm/releases/download/v1.0.0/va-scanner-1.0.0.tgz \
   -f my-values.yaml \
+  --set license=true \
   -n va-scanner
 
 oc get pods -n va-scanner -w
@@ -620,7 +641,7 @@ oc get pods -n va-scanner -w
 ```bash
 oc new-project va-scanner
 curl -LO https://github.com/IBM/guardium-helm/releases/download/v1.0.0/va-scanner-1.0.0.tgz
-helm install va-scanner ./va-scanner-1.0.0.tgz -f my-values.yaml -n va-scanner
+helm install va-scanner ./va-scanner-1.0.0.tgz -f my-values.yaml --set license=true -n va-scanner
 
 oc get pods -n va-scanner -w
 ```
@@ -629,14 +650,14 @@ oc get pods -n va-scanner -w
 ```bash
 cd guardium-helm
 oc new-project va-scanner
-helm install va-scanner ./src/va-scanner -f my-values.yaml -n va-scanner
+helm install va-scanner ./src/va-scanner -f my-values.yaml --set license=true -n va-scanner
 
 oc get pods -n va-scanner -w
 ```
 
 **Update later**
 ```bash
-helm upgrade va-scanner ./src/va-scanner -f my-values.yaml -n va-scanner
+helm upgrade va-scanner ./src/va-scanner -f my-values.yaml --set license=true -n va-scanner
 ```
 
 #### OpenShift Security Notes
@@ -667,7 +688,7 @@ Before starting, ensure you have:
 
 ```bash
 # Update your values file, then upgrade
-helm upgrade va-scanner . -f my-values.yaml
+helm upgrade va-scanner . -f my-values.yaml --set license=true
 
 # Watch the rollout
 kubectl rollout status deployment/va-scanner -n va-scanner
@@ -690,7 +711,7 @@ helm rollback va-scanner 2
 
 ```bash
 # Disable HPA first if enabled
-helm upgrade va-scanner . -f my-values.yaml --set autoscaling.enabled=false
+helm upgrade va-scanner . -f my-values.yaml --set license=true --set autoscaling.enabled=false
 
 # Scale deployment manually
 kubectl scale deployment va-scanner -n va-scanner --replicas=5
@@ -841,7 +862,8 @@ openssl s_client -connect YOUR_GDP_HOST:8443 -showcerts </dev/null 2>/dev/null |
 helm repo update
 helm upgrade va-scanner guardium-helm/va-scanner --version 1.1.1 \
   --namespace va-scanner \
-  -f my-values.yaml
+  -f my-values.yaml \
+  --set license=true
 ```
 
 **What the chart does automatically:**
@@ -897,14 +919,14 @@ If you created the namespace manually in Step 3 before running Helm, either:
 **Option 1: Delete and let Helm create it**
 ```bash
 kubectl delete namespace va-scanner
-helm install va-scanner . -f my-values.yaml
+helm install va-scanner . -f my-values.yaml --set license=true
 ```
 
 **Option 2: Skip namespace creation in Helm**
 ```bash
 # Edit your my-values.yaml file
 # Set: namespace.create: false
-helm install va-scanner . -f my-values.yaml
+helm install va-scanner . -f my-values.yaml --set license=true
 ```
 
 ---

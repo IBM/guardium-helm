@@ -1,6 +1,10 @@
 apiVersion: v2
 name: va-scanner
-description: A Helm chart for deploying Guardium VA Scanner on Kubernetes
+description: |-
+  A Helm chart for deploying Guardium VA Scanner on Kubernetes.
+
+  License
+  By installing this product you accept the license terms https://www.ibm.com/support/customer/csol/terms/?id=L-YCUQ-REB48T&lc=en.
 type: application
 version: 1.1.1
 appVersion: "1.1.1"
