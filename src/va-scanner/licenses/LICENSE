@@ -1,0 +1,213 @@
+The translated license terms can be viewed here: https://www.ibm.com/support/customer/csol/terms/?id=L-YCUQ-REB48T&lc=en
+
+-------------------------------------------------------------------------------
+
+LICENSE INFORMATION
+
+Program Name (Program Number):
+IBM Guardium Data Security Center Software 4.0 (5900-AQE)
+
+IMPORTANT: READ CAREFULLY
+
+Two license agreements are presented below.
+
+1. IBM International License Agreement for Evaluation of Programs
+2. IBM International Program License Agreement
+
+If Licensee is obtaining the Program for purposes of productive use (other than
+evaluation, testing, trial "try or buy," or demonstration): By clicking on the
+"Accept" button below, Licensee accepts the IBM International Program License
+Agreement, without modification.
+
+If Licensee is obtaining the Program for the purpose of evaluation, testing,
+trial "try or buy," or demonstration (collectively, an "Evaluation"): By
+clicking on the "Accept" button below, Licensee accepts both (i) the IBM
+International License Agreement for Evaluation of Programs (the "Evaluation
+License"), without modification; and (ii) the IBM International Program License
+Agreement (the "IPLA"), without modification.
+
+The Evaluation License will apply during the term of Licensee's Evaluation.
+
+The IPLA will automatically apply if Licensee elects to retain the Program
+after the Evaluation (or obtain additional copies of the Program for use after
+the Evaluation) by entering into a procurement agreement (e.g., the IBM
+International Passport Advantage or the IBM Passport Advantage Express
+agreements).
+
+The Evaluation License and the IPLA are not in effect concurrently; neither
+modifies the other; and each is independent of the other.
+
+-------------------------------------------------------------------------------
+
+LICENSE INFORMATION
+
+The Programs listed below are licensed under the following License Information
+terms and conditions in addition to the Program license terms previously agreed
+to by Client and IBM. If Client does not have previously agreed to license terms
+in effect for the Program, the International Program License Agreement
+(i125-3301-15) applies.
+
+Program Name (Program Number):
+IBM Guardium Data Security Center Software 4.0 (5900-AQE)
+
+The following standard terms apply to Licensee's use of the Program.
+
+Bundled Programs
+
+Licensee is authorized to install and use the Bundled Programs identified below.
+A Bundled Program may be accompanied by license terms, and those terms, if any,
+apply to Licensee's use of that Bundled Program. In the event of conflict, the
+terms in this License Information document supersede the Bundled Program's
+terms. The Principal Program and any Bundled Programs are all part of the
+Program, as a whole. Therefore, Licensee must obtain sufficient entitlements to
+the Program, as a whole, to cover Licensee's installation and use of all of the
+Bundled Programs, unless separate entitlements are provided within this License
+Information document.
+
+Bundled Programs:
+  IBM Guardium Data Protection for Big Data
+  IBM Guardium Data Protection for Databases
+  IBM Guardium Data Protection for Database Services
+  IBM Guardium Data Protection for Data Warehouses
+  IBM Guardium Data Protection for Files
+  IBM Guardium Data Protection for z/OS
+  IBM Guardium Data Protection for SAP HANA
+  IBM Guardium Vulnerability Assessment for Databases
+  IBM Guardium Cryptography Manager
+
+Supporting Programs
+
+Licensee is authorized to install and use the Supporting Programs identified
+below only to support Licensee's use of the Principal Program under this
+Agreement. The phrase "to support Licensee's use" would only include those uses
+that are necessary or otherwise directly related to a licensed use of the
+Principal Program or another Supporting Program. The Supporting Programs may not
+be used for any other purpose.
+
+Supporting Programs:
+  IBM Guardium Aggregator Software Appliance
+  IBM Guardium Collector Software Appliance
+
+Compliance Management Programs
+
+Licensee can use the Program to help Licensee meet compliance obligations, which
+may be based on laws, regulations, standards or practices. Any directions,
+suggested usage, or guidance provided by the Program does not constitute legal,
+accounting, or other professional advice, and Licensee is cautioned to obtain
+its own legal, accounting, or other expert counsel. Licensee is solely
+responsible for ensuring that Licensee and Licensee's activities, applications
+and systems comply with all applicable laws, regulations, standards and
+practices. Use of this Program does not guarantee compliance with any law,
+regulation, standard or practice.
+
+Modifiable Third Party Code
+
+To the extent, if any, in the NOTICES file IBM identifies third party code as
+"Modifiable Third Party Code," IBM authorizes Licensee to 1) modify the
+Modifiable Third Party Code and 2) reverse engineer the Program modules that
+directly interface with the Modifiable Third Party Code provided that it is only
+for the purpose of debugging Licensee's modifications to such third party code.
+IBM's service and support obligations, if any, apply only to the unmodified
+Program.
+
+Separately Licensed Code
+
+Each of the components listed in the NON_IBM_LICENSE file is considered
+"Separately Licensed Code" licensed to Licensee under the terms of the
+applicable third party license agreement(s) set forth in the NON_IBM_LICENSE
+file(s) that accompanies the Program, and not this Agreement.
+
+Note: Notwithstanding any of the terms in the third party license agreement,
+the Agreement, or any other agreement Licensee may have with IBM, with respect
+to the Separately Licensed Code:
+(a) IBM provides it to Licensee WITHOUT WARRANTIES OF ANY KIND AND DISCLAIMS
+    ANY AND ALL EXPRESS AND IMPLIED WARRANTIES AND CONDITIONS INCLUDING, BUT NOT
+    LIMITED TO, THE WARRANTY OF TITLE, NON-INFRINGEMENT OR NON-INTERFERENCE,
+    AND THE IMPLIED WARRANTIES AND CONDITIONS OF MERCHANTABILITY AND FITNESS FOR
+    A PARTICULAR PURPOSE;
+(b) IBM is not liable for any direct, indirect, incidental, special, exemplary,
+    punitive or consequential damages including, but not limited to, lost data,
+    lost savings, and lost profits.
+
+Source Components and Sample Materials
+
+The Program includes components in source code form ("Source Components"), or
+other materials identified as Sample Materials or both. Licensee may copy and
+modify Source Components and Sample Materials for internal use only within the
+limits of the license rights under this Agreement; provided, however, that
+Licensee may not alter or delete any copyright information or notices contained
+in the Source Components or Sample Materials. IBM provides the Source Components
+and Sample Materials without obligation of support and "AS IS", WITH NO WARRANTY
+OF ANY KIND, EITHER EXPRESS OR IMPLIED, INCLUDING THE WARRANTY OF TITLE,
+NON-INFRINGEMENT OR NON-INTERFERENCE AND THE IMPLIED WARRANTIES AND CONDITIONS
+OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
+
+Program Keys
+
+For Programs which require keys to operate, Licensee may not have more keys to
+the Program in Licensee's Enterprise than Licensee has entitlements.
+
+Units of Measure
+
+Resource Unit
+
+Resource Unit is a unit of measure by which the Program can be licensed.
+Sufficient entitlements must be obtained to cover every resource managed by,
+processed by, or related to the use of the Program.
+
+Asset
+
+Asset is a unit of measure by which the Program can be licensed. An Asset is
+any tangible resource or item of value to be managed, including production
+equipment, facilities, transportation, IT hardware and software. Licensee must
+obtain entitlements for the total number of Assets accessed, scanned or managed
+by the Program.
+
+Entitlement Restrictions:
+  If Licensee is using the Program to manage IBM Security Guardium S-TAP on
+  z/OS, entitlements are calculated at 1 Asset for every 5 Value Units (VU) of
+  Million Server Units (MSU).
+
+Conversion Entitlement Details:
+  Guardium Data Protection      - 1 Asset / 300 RU
+  Guardium Vulnerability Assessment - 1 Asset / 40 RU
+  Guardium Quantum Safe         - 5 Assets / 1 RU
+    (Note: As of IBM Guardium Data Security Center v4.0, new RU entitlements
+     purchased on or after June 2, 2026 may no longer be converted to Asset
+     entitlements for Guardium Quantum Safe.)
+
+Non-Production
+
+Licensee may use the following Bundled Programs solely for non-production
+activities. Non-production activities are defined as anything other than
+actively monitoring or protecting data and scanning data.
+
+Non-Production Bundled Programs:
+  IBM Security Guardium Data Protection for Big Data
+  IBM Security Guardium Data Protection for Databases
+  IBM Security Guardium Data Protection for Database Services
+  IBM Security Guardium Data Protection for Data Warehouses
+  IBM Security Guardium Data Protection for Files
+  IBM Security Guardium Data Protection for z/OS
+  IBM Security Guardium Data Protection for SAP HANA
+  IBM Security Guardium Vulnerability Assessment for Databases
+
+Use Limitations: Use by Principal Program
+
+"Use by Principal Program" means that the Supporting Program is provided
+exclusively for use by the Principal Program. Neither Licensee nor any
+application, program or device is authorized to directly use or access the
+services of the Supporting Program except to perform administrative functions
+such as backup, recovery and authorized configuration.
+
+Licensee is not required to obtain entitlements to the Program for:
+  1. Network infrastructure (such as Switches, Routers, AV, FIM, Proxies,
+     IPS, DLP, load balancers, firewalls)
+  2. Client Devices (single user computing devices or special purpose sensors)
+  3. IBM Security Guardium Aggregator Software Appliance
+  4. IBM Security Guardium Collector Software Appliance
+
+-------------------------------------------------------------------------------
+
+For the full license text and all translated versions, visit:
+https://www.ibm.com/support/customer/csol/terms/?id=L-YCUQ-REB48T&lc=en

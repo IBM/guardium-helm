@@ -2,6 +2,12 @@
 # This is a YAML-formatted file.
 # Declare variables to be passed into your templates.
 
+# License
+# By installing this product you accept the license terms:
+# https://www.ibm.com/support/customer/csol/terms/?id=L-YCUQ-REB48T&lc=en
+# Change license to true to indicate you have read and agree to the license agreement.
+license: false
+
 # Namespace configuration
 namespace:
   create: true
